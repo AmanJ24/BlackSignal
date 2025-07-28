@@ -1,0 +1,19 @@
+Core Architecture Components
+OSINT Data Ingestion Pipeline
+    •    Tor relay enumeration via stem controller APIs
+    •    Automated .onion domain discovery through recursive crawling
+    •    Hidden service marketplace scraping (paste sites, carding forums, RaaS platforms)
+    •    Integrate APIs: Intel471, Flashpoint, DarkOwl, Recorded Future
+    •    Parse structured/unstructured threat intelligence feeds (STIX/TAXII)
+IOC Extraction & Attribution Engine
+    •    RegEx patterns for email harvesting, cryptocurrency wallets, PII
+    •    Named entity recognition for threat actor handles, affiliate IDs
+    •    Hash extraction (MD5/SHA256) for malware samples and tools
+    •    Infrastructure mapping: C2 domains, bulletproof hosting, VPN exit nodes
+    •    Geolocation correlation via passive DNS and BGP analysis
+Threat Actor Profiling System
+    •    Cross-reference handles across multiple marketplaces
+    •    Behavioral analysis: posting patterns, linguistic fingerprinting
+    •    Reputation scoring based on feedback systems and escrow history
+    •    Associate personas with TTPs using MITRE ATT&CK framework
+    •    Track ransomware affiliate recruitment and payment structures

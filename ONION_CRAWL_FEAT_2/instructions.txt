@@ -1,0 +1,13 @@
+
+update the seed url to: 
+
+SEED_URLS = [
+    "http://darkfailllnkf4vf.onion",
+    "http://hss3uro2hsxfogfq.onion",
+    "http://dppmfxaacucguzpc.onion",
+    "http://torlinkbgs6aabns.onion",
+    "http://ahmiafiaduknq7cz.onion"
+]
+
+
+and Max depth to 3.

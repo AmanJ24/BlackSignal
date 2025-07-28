@@ -1,0 +1,247 @@
+================================================================================
+🕵️ OSINT + THREAT INTEL AUTOMATION PIPELINE - PROJECT PROGRESS REPORT
+================================================================================
+
+Last Updated: 2025-07-28T07:14:31Z
+Project Directory: /home/aman/PROJECT_DARK_WEB/
+Current n8n Account: sipiv63984.app.n8n.cloud
+
+================================================================================
+📋 PROJECT OVERVIEW
+================================================================================
+
+This project automates 15 core features for dark web monitoring, threat intelligence 
+extraction, and threat actor profiling using n8n, Python, and Free/Public APIs.
+
+TOTAL FEATURES PLANNED: 15 (Based on features.txt and osint_pipeline.md)
+FEATURES COMPLETED: 4
+FEATURES IN PROGRESS: 0
+FEATURES REMAINING: 11
+
+================================================================================
+✅ COMPLETED FEATURES
+================================================================================
+
+🔹 FEATURE 1: TOR_RELAY_FEAT_1 - Tor Relay Enumeration
+   Status: ✅ COMPLETED
+   Directory: /home/aman/PROJECT_DARK_WEB/TOR_RELAY_FEAT_1/
+   
+   What it does:
+   - Discovers active Tor relays (entry/middle/exit) using Tor control protocol
+   - Uses stem.Controller to fetch relay info from Tor control port 9051
+   - Serves data via Flask API on /relays endpoint
+   - Sends relay data to n8n webhook
+   
+   Files:
+   - relay_enum.py: Basic relay enumeration script
+   - tor_api.py: Flask API server with webhook integration
+   
+   Webhook: https://kartotulta.app.n8n.cloud/webhook-test/tor-relays (OLD)
+   ⚠️  NEEDS UPDATE: Webhook URL needs to be updated to current n8n account
+   
+   Technical Notes:
+   - Requires Tor running with ControlPort 9051
+   - Uses password authentication: "TorRelay123"
+   - Fetches first 10 relays by default
+
+--------------------------------------------------------------------------------
+
+🔹 FEATURE 2: ONION_CRAWL_FEAT_2 - Automated .onion Domain Discovery
+   Status: ✅ COMPLETED
+   Directory: /home/aman/PROJECT_DARK_WEB/ONION_CRAWL_FEAT_2/
+   
+   What it does:
+   - Crawls known .onion domains and discovers new hidden services recursively
+   - Uses Tor SOCKS5 proxy for connections
+   - Recursive crawling up to defined depth (max 3)
+   - Extracts .onion links from HTML content
+   
+   Files:
+   - onion_domain_discovery.py: Main crawler script
+   - onion_domain_discovery_backup.py: Backup version
+   - onion_domain_discovery_summary.md: Feature documentation
+   - onion_discovery_final.log: Execution logs
+   - instructions.txt: Configuration notes
+   
+   Current Configuration:
+   - Max depth: 3
+   - Seed URLs: 5 .onion domains including darkfail, hss3uro2hsxfogfq, etc.
+   - Uses curl for reliable onion connections
+   - SOCKS5 proxy: 127.0.0.1:9050
+   
+   Webhook: ⚠️  NEEDS UPDATE to current n8n account
+   
+   Technical Notes:
+   - Requires Tor daemon running
+   - Uses BeautifulSoup for HTML parsing
+   - Implements rate limiting and error handling
+
+--------------------------------------------------------------------------------
+
+🔹 FEATURE 3: MARKET_SCRAPE_FEAT_3 - Hidden Services Marketplace Scraping
+   Status: ✅ COMPLETED & CLEANED
+   Directory: /home/aman/PROJECT_DARK_WEB/MARKET_SCRAPE_FEAT_3/
+   
+   What it does:
+   - Scrapes listings from darknet marketplaces
+   - Extracts vendor, BTC addresses, product info, and pricing
+   - Routes through Tor proxy for .onion sites
+   - Sends structured results to n8n webhook
+   
+   Files:
+   - marketplace_scraper.py: Main scraper with comprehensive selectors
+   - test_webhook.py: Webhook testing script
+   - test_socks.py: SOCKS connection testing
+   - requirements.txt: Dependencies
+   - instructions.txt: Feature description
+   - marketplace_scraper.log: Execution logs
+   
+   Current Configuration:
+   - Target URL: https://3g2upl4pq6kufc4m.onion (DuckDuckGo for testing)
+   - Webhook: https://sipiv63984.app.n8n.cloud/webhook-test/market-scrape ✅ UPDATED
+   - Proxy: socks5h://127.0.0.1:9050
+   - Max items per scrape: 20
+   
+   Features:
+   - Multiple selector patterns for different marketplace layouts
+   - BTC address pattern recognition
+   - Price extraction with currency detection
+   - Vendor/author identification
+   - Fallback to test data if scraping fails
+   
+   Recent Changes:
+   - Updated webhook URL to current n8n account (sipiv63984.app.n8n.cloud)
+   - Cleaned up configuration
+
+--------------------------------------------------------------------------------
+
+🔹 FEATURE 4: API_ENRICH_FEAT_4 - API Enrichment (Free-tier APIs)
+   Status: ✅ COMPLETED (Just Created)
+   Directory: /home/aman/PROJECT_DARK_WEB/API_ENRICH_FEAT_4/
+   
+   What it does:
+   - Enriches IOCs (IPs, domains, hashes, BTC addresses) using free threat intel APIs
+   - Queries multiple free APIs for threat intelligence data
+   - Provides geolocation, network info, malware detection, reputation scores
+   
+   Files:
+   - api_enrichment.py: Main enrichment script with APIEnricher class
+   - requirements.txt: Dependencies (requests, OTXv2, python-dotenv, etc.)
+   - instructions.txt: Feature documentation
+   
+   Supported APIs:
+   - IP-API (free geolocation)
+   - BGPView (ASN/network info)
+   - AbuseIPDB (requires free API key)
+   - VirusTotal (requires free API key)
+   - OTX/AlienVault (free threat intelligence)
+   - Shodan (requires API key)
+   
+   Current Configuration:
+   - Webhook: https://sipiv63984.app.n8n.cloud/webhook-test/api-enrich ✅ CURRENT
+   - Rate limiting implemented for each API
+   - IOC validation with regex patterns
+   - Supports: IPs, domains, MD5/SHA256 hashes, BTC addresses, emails
+   
+   Features:
+   - Multi-API enrichment pipeline
+   - Automatic IOC type detection
+   - Error handling and rate limiting
+   - Structured output with metadata
+   - Test data for validation
+
+================================================================================
+🔧 TECHNICAL INFRASTRUCTURE STATUS
+================================================================================
+
+✅ Python Virtual Environment: /home/aman/PROJECT_DARK_WEB/venv/
+✅ Tor Setup: Required for Features 1, 2, 3 (SOCKS5 proxy + Control port)
+✅ n8n Cloud Account: sipiv63984.app.n8n.cloud
+✅ Project Structure: Feature-based directories with consistent naming
+
+Dependencies Installed:
+- requests[socks]: For Tor proxy connections
+- beautifulsoup4: HTML parsing
+- stem: Tor control protocol
+- flask: API servers
+- lxml: XML/HTML processing
+- OTXv2: AlienVault OTX integration
+- python-dotenv: Environment management
+
+================================================================================
+⚠️  IMMEDIATE ACTIONS REQUIRED
+================================================================================
+
+1. UPDATE OLD WEBHOOK URLs:
+   - Feature 1 (TOR_RELAY_FEAT_1): Update from kartotulta.app.n8n.cloud to sipiv63984.app.n8n.cloud
+   - Feature 2 (ONION_CRAWL_FEAT_2): Add proper webhook URL to current n8n account
+
+2. TEST COMPLETED FEATURES:
+   - Verify all webhooks work with current n8n account
+   - Test Tor connections and proxy settings
+   - Validate API keys for Feature 4 enrichment
+
+================================================================================
+📋 REMAINING FEATURES TO BUILD (11 Features)
+================================================================================
+
+Based on PROJECT_DETAILS/osint_pipeline.md:
+
+🔲 Feature 5: STIX/TAXII Feed Parsing
+🔲 Feature 6: IOC Extraction with Regex  
+🔲 Feature 7: Named Entity Recognition (NER)
+🔲 Feature 8: Hash Extraction (Malware IOCs)
+🔲 Feature 9: Infrastructure Mapping
+🔲 Feature 10: Geolocation Correlation
+🔲 Feature 11: Handle Correlation
+🔲 Feature 12: Behavioral Analysis
+🔲 Feature 13: Reputation Scoring
+🔲 Feature 14: MITRE ATT&CK TTP Mapping
+🔲 Feature 15: Affiliate Recruitment/Payment Analysis
+
+================================================================================
+🎯 NEXT STEPS
+================================================================================
+
+1. Fix webhook URLs in Features 1 & 2
+2. Test all completed features end-to-end
+3. Begin Feature 5 (STIX/TAXII Feed Parsing)
+4. Set up API keys for Feature 4 enrichment services
+5. Document integration patterns between features
+
+================================================================================
+📁 PROJECT STRUCTURE
+================================================================================
+
+PROJECT_DARK_WEB/
+├── PROJECT_DETAILS/
+│   ├── features.txt
+│   ├── osint_pipeline.md
+│   ├── n8n_account.txt
+│   ├── threat_intel_pitch_deck.md
+│   └── Project_Progress.txt (this file)
+├── TOR_RELAY_FEAT_1/
+│   ├── relay_enum.py
+│   └── tor_api.py
+├── ONION_CRAWL_FEAT_2/
+│   ├── onion_domain_discovery.py
+│   ├── onion_domain_discovery_backup.py
+│   ├── onion_domain_discovery_summary.md
+│   ├── onion_discovery_final.log
+│   └── instructions.txt
+├── MARKET_SCRAPE_FEAT_3/
+│   ├── marketplace_scraper.py
+│   ├── test_webhook.py
+│   ├── test_socks.py
+│   ├── requirements.txt
+│   ├── instructions.txt
+│   └── marketplace_scraper.log
+├── API_ENRICH_FEAT_4/
+│   ├── api_enrichment.py
+│   ├── requirements.txt
+│   └── instructions.txt
+└── venv/ (Python virtual environment)
+
+================================================================================
+END OF PROGRESS REPORT
+================================================================================

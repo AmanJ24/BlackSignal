@@ -1,0 +1,23 @@
+# Main dependencies for OSINT Dark Web Automation Pipeline
+
+# Core Python packages
+requests[socks]
+beautifulsoup4
+lxml
+python-dotenv
+
+# Flask for APIs
+flask
+
+# Tor integration
+stem
+PySocks
+
+# Threat Intelligence APIs
+OTXv2
+
+# HTTP handling
+urllib3
+
+# Data processing
+json

@@ -1,0 +1,8 @@
+What It Does:
+
+    Connects to a .onion marketplace through Tor
+
+    Scrapes listings (titles, authors, price, BTC address)
+
+    Sends the structured results to your n8n Cloud webhook:
+    https://sipiv63984.app.n8n.cloud/webhook-test/market-scrape

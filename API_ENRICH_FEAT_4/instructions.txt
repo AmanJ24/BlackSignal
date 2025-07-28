@@ -1,0 +1,29 @@
+Feature 4: API Enrichment (Free-tier APIs)
+
+What It Does:
+    - Enriches scraped data using free threat intelligence APIs
+    - Takes IOCs (IPs, domains, hashes, BTC addresses) from previous features
+    - Queries multiple free APIs for threat intelligence data
+    - Sends enriched results to n8n Cloud webhook: https://sipiv63984.app.n8n.cloud/webhook-test/api-enrich
+
+Supported Free APIs:
+    - OTX (AlienVault Open Threat Exchange)
+    - Shodan (Free tier)
+    - AbuseIPDB
+    - VirusTotal
+    - IP-API (geolocation)
+    - BGPView (ASN/network info)
+
+Input Data:
+    - IP addresses
+    - Domain names
+    - File hashes (MD5/SHA256)
+    - Bitcoin addresses
+    - Email addresses
+
+Output:
+    - Enriched threat intelligence data
+    - Geolocation information
+    - Network/ASN details
+    - Malware detection results
+    - Reputation scores
