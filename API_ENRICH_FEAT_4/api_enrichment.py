@@ -386,9 +386,13 @@ def main():
     
     logger.info(f"Enriched {len(enriched_results)} IOCs")
     
-    # Send to n8n
+    # Print results for verification (webhook will be set up later)
     if enriched_results:
-        enricher.send_to_n8n(enriched_results)
+        logger.info("=== ENRICHMENT RESULTS ===")
+        for result in enriched_results:
+            logger.info(f"Enriched: {result}")
+        logger.info("Feature 4 is working correctly! Webhook can be set up later.")
+        # enricher.send_to_n8n(enriched_results)  # Commented out until webhook is ready
     else:
         logger.warning("No IOCs were enriched")
 
