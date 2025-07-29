@@ -1,0 +1,22 @@
+# To-Do List
+
+1. **Set up n8n Webhooks**
+   - Configure webhook for Feature 4 (API Enrichment)
+   - Configure webhook for Feature 5 (STIX/TAXII Feed Parsing)
+
+2. **Verify External APIs**
+   - Ensure Abuse.ch APIs are accessible and returning data
+   - Adjust configurations or credentials if needed
+
+3. **Review & Update Dependencies**
+   - Regularly update dependencies in `requirements.txt` files
+   - Verify compatibility with virtual environments
+
+4. **Enhance Logging**
+   - Review current logging output for completeness
+   - Implement error handling improvements
+
+5. **Security Audit**
+   - Check for vulnerabilities in dependencies
+   - Review code for potential security issues
+
