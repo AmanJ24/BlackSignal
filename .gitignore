@@ -35,15 +35,14 @@ venv_feat*/
 env/
 ENV/
 .venv/
+VENV/
 
 # Logs and temporary files
 *.log
 *.tmp
 *.temp
 temp/
-# Allow logs directory but not log files inside
-!logs/
-logs/*.log
+logs/
 
 # IDE
 .vscode/
