@@ -1,0 +1,8 @@
+# Feature 6: IOC Extraction with Regex - Dependencies
+# =====================================================
+
+# Core Python libraries for IOC extraction
+requests>=2.28.0
+
+# Note: This feature primarily uses Python's built-in 're' module
+# Dependencies are minimal to keep it lightweight

@@ -14,9 +14,9 @@ This project automates 15 core features for dark web monitoring, threat intellig
 extraction, and threat actor profiling using n8n, Python, and Free/Public APIs.
 
 TOTAL FEATURES PLANNED: 15 (Based on features.txt and osint_pipeline.md)
-FEATURES COMPLETED: 5
+FEATURES COMPLETED: 6
 FEATURES IN PROGRESS: 0
-FEATURES REMAINING: 10
+FEATURES REMAINING: 9
 
 ================================================================================
 ✅ COMPLETED FEATURES
@@ -187,8 +187,23 @@ FEATURES REMAINING: 10
    - Test data validation (3 indicators, 8 IOCs extracted)
    - Virtual environment with specialized dependencies
 
-================================================================================
-🔧 TECHNICAL INFRASTRUCTURE STATUS
+
+
+🔹 FEATURE 6: IOC_EXTRACT_FEAT_6 - IOC Extraction with Regex
+   Status: ✅ COMPLETED
+   Directory: /home/aman/PROJECT_DARK_WEB/IOC_EXTRACT_FEAT_6/
+   
+   What it does:
+   - Extracts IOCs (emails, IPs, hashes, BTC addresses, etc.) from raw text
+   - Uses comprehensive regex patterns for detection
+   - Validates IOCs to reduce false positives
+   - Sends structured JSON to n8n webhook
+   
+   Files:
+   - ioc_extractor.py: Main IOC extraction script
+   - test_webhook.py: Flask server for local webhook testing
+   - requirements.txt: Python dependencies
+   - README.md: Feature documentation
 ================================================================================
 
 ✅ Python Virtual Environment: /home/aman/PROJECT_DARK_WEB/venv/
@@ -241,7 +256,7 @@ Dependencies Installed:
 Based on PROJECT_DETAILS/osint_pipeline.md:
 
 ✅ Feature 5: STIX/TAXII Feed Parsing - COMPLETED!
-🔲 Feature 6: IOC Extraction with Regex
+✅ Feature 6: IOC Extraction with Regex - COMPLETED!
 🔲 Feature 7: Named Entity Recognition (NER)
 🔲 Feature 8: Hash Extraction (Malware IOCs)
 🔲 Feature 9: Infrastructure Mapping
@@ -260,7 +275,7 @@ Based on PROJECT_DETAILS/osint_pipeline.md:
 2. Test all completed features end-to-end
 3. ✅ COMPLETED: Feature 5 (STIX/TAXII Feed Parsing) - DONE!
 4. ✅ COMPLETED: Project cleanup and logs directory creation
-5. Begin Feature 6 (IOC Extraction with Regex)
+5. ✅ COMPLETED: Feature 6 (IOC Extraction with Regex) - DONE!
 6. Set up API keys for Feature 4 enrichment services
 7. Document integration patterns between features
 
@@ -296,6 +311,11 @@ PROJECT_DARK_WEB/
 │   ├── stix_taxii_parser.py
 │   ├── requirements.txt
 │   └── instructions.txt
+├── IOC_EXTRACT_FEAT_6/
+│   ├── ioc_extractor.py
+│   ├── test_webhook.py
+│   ├── requirements.txt
+│   └── README.md
 ├── logs/
 │   └── README.md (Log files directory for all features)
 ├── venv/ (Python virtual environment)
