@@ -1,0 +1,90 @@
+1|# 🚀 Hash Extraction (Malware IOCs) - Feature 8
+2|
+3|**Purpose**: Extracts MD5, SHA256, and SHA1 hashes from collected data and uses VirusTotal API for further analysis.
+4|
+5|## 🧰 Tools Required
+6|- `re` (Python regular expressions)
+7|- `requests` (≥2.28.0)
+8|- `python-dotenv` (≥0.19.0)
+9|
+10|## 📁 File Structure
+11|```  
+12|HASH_EXTRACT_FEAT_8/  
+13|├── hash_extractor.py              # Main hash extraction and enrichment script  
+14|├── sample_hash_data.json          # Input data from other features  
+15|├── requirements.txt               # Python dependencies  
+16|└── instructions.txt              # This file  
+17|```
+18|
+19|## 🚀 Setup Instructions
+20|
+21|### 1. Create Virtual Environment
+22|```bash
+23|python3 -m venv ../venv_ner
+24|source ../venv_ner/bin/activate
+25|```
+26|
+27|### 2. Install Dependencies
+28|```bash
+29|pip install -r requirements.txt
+30|```
+31|
+32|### 3. Prepare Input Data
+33|Ensure `sample_hash_data.json` contains relevant hash patterns:
+34|```json
+35|[
+36|    {
+37|        "source": "dark_web_crawler",
+38|        "timestamp": "2025-07-31T11:30:00Z",
+39|        "data": "File hash MD5: e99a18c428cb38d5f260853678922e03, SHA256: c5f414b38e..."
+40|    }
+41|]
+42|```
+43|
+44|### 4. Run Hash Extraction
+45|```bash
+46|source ../venv_ner/bin/activate
+47|python hash_extractor.py
+48|```
+49|
+50|## 🎯 What It Detects
+51|
+52|- **MD5**: Commonly used hash
+53|- **SHA256/SHA1**: More secure hash types
+54|
+55|## 📊 Output Format
+56|
+57|```json
+58|{
+59|  "timestamp": "2025-07-31T12:00:00.000000",
+60|  "feature": "Hash Extraction",
+61|  "input_text": "File hash MD5: e99a...",
+62|  "hashes_found": 2,
+63|  "hashes": {
+64|    "MD5": ["e99a18c428cb38d5f260853678922e03"],
+65|    "SHA256": ["c5f414b38e..."]
+66|  },
+67|  "source": "dark_web_crawler",
+68|  "source_timestamp": "2025-07-31T11:30:00Z"
+69|}
+70|```
+71|
+72|## 🔗 Integration with OSINT Pipeline
+73|
+74|1. **Input**: Receives hash data from various OSINT features  
+75|2. **Processing**: Extracts and enriches hash data using VirusTotal  
+76|3. **Output**: Structured JSON for n8n webhook  
+77|4. **Next Steps**: Correlations in Features 9-15
+78|
+79|## ⚙️ Functions
+80|
+81|- `extract_hashes(text)`: Main extraction logic
+82|- `query_virustotal(hash)`: Enrich hash data with VirusTotal
+83|- `process_data(source_data)`: Pipeline for input data handling
+84|
+85|## 🎯 Use Cases
+86|  
+87|- **Malware Detection**: Identify potential malicious files
+88|- **Network Security**: Link hashes to known threats
+89|- **Threat Intel Sharing**: Share with security community
+
