@@ -1,0 +1,792 @@
+[
+  {
+    "ip_address": "8.8.8.8",
+    "timestamp": "2025-07-31T14:37:37.689997",
+    "data_sources": [
+      "mock_shodan",
+      "mock_abuseipdb",
+      "mock_bgpview"
+    ],
+    "shodan": {
+      "os": "Linux",
+      "ports": [
+        22,
+        80,
+        443
+      ],
+      "vulns": [],
+      "org": "Mock Organization",
+      "isp": "Mock ISP",
+      "country_code": "US",
+      "city": "Mock City"
+    },
+    "abuseipdb": {
+      "data": {
+        "ipAddress": "8.8.8.8",
+        "isPublic": true,
+        "ipVersion": 4,
+        "isWhitelisted": false,
+        "abuseConfidencePercentage": 0,
+        "countryCode": "US",
+        "usageType": "Data Center/Web Hosting/Transit",
+        "isp": "Mock ISP",
+        "domain": "mock-domain.com",
+        "totalReports": 0,
+        "numDistinctUsers": 0
+      }
+    },
+    "bgpview": {
+      "data": {
+        "ip": "8.8.8.8",
+        "ptr_record": "mock-ptr-8-8-8-8.com",
+        "rir_allocation": {
+          "rir_name": "ARIN",
+          "country_code": "US",
+          "date_allocated": "2000-01-01 00:00:00",
+          "allocation_status": "allocated"
+        },
+        "prefixes": [
+          {
+            "prefix": "8.8.8.8/24",
+            "ip": "8.8.8.8",
+            "cidr": 24,
+            "asn": {
+              "asn": 15169,
+              "name": "GOOGLE",
+              "description": "Google LLC",
+              "country_code": "US"
+            }
+          }
+        ]
+      }
+    },
+    "analysis": {
+      "risk_score": 10,
+      "risk_factors": [
+        "Hosting/Data center IP"
+      ],
+      "infrastructure_type": "hosting/datacenter",
+      "hosting_provider": "unknown",
+      "geolocation": {
+        "country": "US",
+        "isp": "Mock ISP",
+        "usage_type": "Data Center/Web Hosting/Transit"
+      },
+      "recommendations": [
+        "Low risk IP"
+      ]
+    },
+    "source": "marketplace_scraping"
+  },
+  {
+    "ip_address": "1.1.1.1",
+    "timestamp": "2025-07-31T14:37:39.225787",
+    "data_sources": [
+      "mock_shodan",
+      "mock_abuseipdb",
+      "mock_bgpview"
+    ],
+    "shodan": {
+      "os": "Linux",
+      "ports": [
+        22,
+        80,
+        443
+      ],
+      "vulns": [],
+      "org": "Mock Organization",
+      "isp": "Mock ISP",
+      "country_code": "US",
+      "city": "Mock City"
+    },
+    "abuseipdb": {
+      "data": {
+        "ipAddress": "1.1.1.1",
+        "isPublic": true,
+        "ipVersion": 4,
+        "isWhitelisted": false,
+        "abuseConfidencePercentage": 0,
+        "countryCode": "US",
+        "usageType": "Data Center/Web Hosting/Transit",
+        "isp": "Mock ISP",
+        "domain": "mock-domain.com",
+        "totalReports": 0,
+        "numDistinctUsers": 0
+      }
+    },
+    "bgpview": {
+      "data": {
+        "ip": "1.1.1.1",
+        "ptr_record": "mock-ptr-1-1-1-1.com",
+        "rir_allocation": {
+          "rir_name": "ARIN",
+          "country_code": "US",
+          "date_allocated": "2000-01-01 00:00:00",
+          "allocation_status": "allocated"
+        },
+        "prefixes": [
+          {
+            "prefix": "1.1.1.1/24",
+            "ip": "1.1.1.1",
+            "cidr": 24,
+            "asn": {
+              "asn": 15169,
+              "name": "GOOGLE",
+              "description": "Google LLC",
+              "country_code": "US"
+            }
+          }
+        ]
+      }
+    },
+    "analysis": {
+      "risk_score": 10,
+      "risk_factors": [
+        "Hosting/Data center IP"
+      ],
+      "infrastructure_type": "hosting/datacenter",
+      "hosting_provider": "unknown",
+      "geolocation": {
+        "country": "US",
+        "isp": "Mock ISP",
+        "usage_type": "Data Center/Web Hosting/Transit"
+      },
+      "recommendations": [
+        "Low risk IP"
+      ]
+    },
+    "source": "marketplace_scraping"
+  },
+  {
+    "ip_address": "185.220.101.182",
+    "timestamp": "2025-07-31T14:37:40.956412",
+    "data_sources": [
+      "mock_shodan",
+      "mock_abuseipdb",
+      "mock_bgpview"
+    ],
+    "shodan": {
+      "os": "Linux",
+      "ports": [
+        22,
+        80,
+        443
+      ],
+      "vulns": [],
+      "org": "Mock Organization",
+      "isp": "Mock ISP",
+      "country_code": "US",
+      "city": "Mock City"
+    },
+    "abuseipdb": {
+      "data": {
+        "ipAddress": "185.220.101.182",
+        "isPublic": true,
+        "ipVersion": 4,
+        "isWhitelisted": false,
+        "abuseConfidencePercentage": 0,
+        "countryCode": "US",
+        "usageType": "Data Center/Web Hosting/Transit",
+        "isp": "Mock ISP",
+        "domain": "mock-domain.com",
+        "totalReports": 0,
+        "numDistinctUsers": 0
+      }
+    },
+    "bgpview": {
+      "data": {
+        "ip": "185.220.101.182",
+        "ptr_record": "mock-ptr-185-220-101-182.com",
+        "rir_allocation": {
+          "rir_name": "ARIN",
+          "country_code": "US",
+          "date_allocated": "2000-01-01 00:00:00",
+          "allocation_status": "allocated"
+        },
+        "prefixes": [
+          {
+            "prefix": "185.220.101.182/24",
+            "ip": "185.220.101.182",
+            "cidr": 24,
+            "asn": {
+              "asn": 15169,
+              "name": "GOOGLE",
+              "description": "Google LLC",
+              "country_code": "US"
+            }
+          }
+        ]
+      }
+    },
+    "analysis": {
+      "risk_score": 10,
+      "risk_factors": [
+        "Hosting/Data center IP"
+      ],
+      "infrastructure_type": "hosting/datacenter",
+      "hosting_provider": "unknown",
+      "geolocation": {
+        "country": "US",
+        "isp": "Mock ISP",
+        "usage_type": "Data Center/Web Hosting/Transit"
+      },
+      "recommendations": [
+        "Low risk IP"
+      ]
+    },
+    "source": "marketplace_scraping"
+  },
+  {
+    "ip_address": "104.244.76.13",
+    "timestamp": "2025-07-31T14:37:42.707612",
+    "data_sources": [
+      "mock_shodan",
+      "mock_abuseipdb",
+      "mock_bgpview"
+    ],
+    "shodan": {
+      "os": "Linux",
+      "ports": [
+        22,
+        80,
+        443
+      ],
+      "vulns": [],
+      "org": "Mock Organization",
+      "isp": "Mock ISP",
+      "country_code": "US",
+      "city": "Mock City"
+    },
+    "abuseipdb": {
+      "data": {
+        "ipAddress": "104.244.76.13",
+        "isPublic": true,
+        "ipVersion": 4,
+        "isWhitelisted": false,
+        "abuseConfidencePercentage": 0,
+        "countryCode": "US",
+        "usageType": "Data Center/Web Hosting/Transit",
+        "isp": "Mock ISP",
+        "domain": "mock-domain.com",
+        "totalReports": 0,
+        "numDistinctUsers": 0
+      }
+    },
+    "bgpview": {
+      "data": {
+        "ip": "104.244.76.13",
+        "ptr_record": "mock-ptr-104-244-76-13.com",
+        "rir_allocation": {
+          "rir_name": "ARIN",
+          "country_code": "US",
+          "date_allocated": "2000-01-01 00:00:00",
+          "allocation_status": "allocated"
+        },
+        "prefixes": [
+          {
+            "prefix": "104.244.76.13/24",
+            "ip": "104.244.76.13",
+            "cidr": 24,
+            "asn": {
+              "asn": 15169,
+              "name": "GOOGLE",
+              "description": "Google LLC",
+              "country_code": "US"
+            }
+          }
+        ]
+      }
+    },
+    "analysis": {
+      "risk_score": 10,
+      "risk_factors": [
+        "Hosting/Data center IP"
+      ],
+      "infrastructure_type": "hosting/datacenter",
+      "hosting_provider": "unknown",
+      "geolocation": {
+        "country": "US",
+        "isp": "Mock ISP",
+        "usage_type": "Data Center/Web Hosting/Transit"
+      },
+      "recommendations": [
+        "Low risk IP"
+      ]
+    },
+    "source": "marketplace_scraping"
+  },
+  {
+    "ip_address": "199.87.154.255",
+    "timestamp": "2025-07-31T14:37:44.551602",
+    "data_sources": [
+      "mock_shodan",
+      "mock_abuseipdb",
+      "mock_bgpview"
+    ],
+    "shodan": {
+      "os": "Linux",
+      "ports": [
+        22,
+        80,
+        443
+      ],
+      "vulns": [],
+      "org": "Mock Organization",
+      "isp": "Mock ISP",
+      "country_code": "US",
+      "city": "Mock City"
+    },
+    "abuseipdb": {
+      "data": {
+        "ipAddress": "199.87.154.255",
+        "isPublic": true,
+        "ipVersion": 4,
+        "isWhitelisted": false,
+        "abuseConfidencePercentage": 0,
+        "countryCode": "US",
+        "usageType": "Data Center/Web Hosting/Transit",
+        "isp": "Mock ISP",
+        "domain": "mock-domain.com",
+        "totalReports": 0,
+        "numDistinctUsers": 0
+      }
+    },
+    "bgpview": {
+      "data": {
+        "ip": "199.87.154.255",
+        "ptr_record": "mock-ptr-199-87-154-255.com",
+        "rir_allocation": {
+          "rir_name": "ARIN",
+          "country_code": "US",
+          "date_allocated": "2000-01-01 00:00:00",
+          "allocation_status": "allocated"
+        },
+        "prefixes": [
+          {
+            "prefix": "199.87.154.255/24",
+            "ip": "199.87.154.255",
+            "cidr": 24,
+            "asn": {
+              "asn": 15169,
+              "name": "GOOGLE",
+              "description": "Google LLC",
+              "country_code": "US"
+            }
+          }
+        ]
+      }
+    },
+    "analysis": {
+      "risk_score": 10,
+      "risk_factors": [
+        "Hosting/Data center IP"
+      ],
+      "infrastructure_type": "hosting/datacenter",
+      "hosting_provider": "unknown",
+      "geolocation": {
+        "country": "US",
+        "isp": "Mock ISP",
+        "usage_type": "Data Center/Web Hosting/Transit"
+      },
+      "recommendations": [
+        "Low risk IP"
+      ]
+    },
+    "source": "onion_crawling"
+  },
+  {
+    "ip_address": "45.33.32.156",
+    "timestamp": "2025-07-31T14:37:46.086645",
+    "data_sources": [
+      "mock_shodan",
+      "mock_abuseipdb",
+      "mock_bgpview"
+    ],
+    "shodan": {
+      "os": "Linux",
+      "ports": [
+        22,
+        80,
+        443
+      ],
+      "vulns": [],
+      "org": "Mock Organization",
+      "isp": "Mock ISP",
+      "country_code": "US",
+      "city": "Mock City"
+    },
+    "abuseipdb": {
+      "data": {
+        "ipAddress": "45.33.32.156",
+        "isPublic": true,
+        "ipVersion": 4,
+        "isWhitelisted": false,
+        "abuseConfidencePercentage": 0,
+        "countryCode": "US",
+        "usageType": "Data Center/Web Hosting/Transit",
+        "isp": "Mock ISP",
+        "domain": "mock-domain.com",
+        "totalReports": 0,
+        "numDistinctUsers": 0
+      }
+    },
+    "bgpview": {
+      "data": {
+        "ip": "45.33.32.156",
+        "ptr_record": "mock-ptr-45-33-32-156.com",
+        "rir_allocation": {
+          "rir_name": "ARIN",
+          "country_code": "US",
+          "date_allocated": "2000-01-01 00:00:00",
+          "allocation_status": "allocated"
+        },
+        "prefixes": [
+          {
+            "prefix": "45.33.32.156/24",
+            "ip": "45.33.32.156",
+            "cidr": 24,
+            "asn": {
+              "asn": 15169,
+              "name": "GOOGLE",
+              "description": "Google LLC",
+              "country_code": "US"
+            }
+          }
+        ]
+      }
+    },
+    "analysis": {
+      "risk_score": 10,
+      "risk_factors": [
+        "Hosting/Data center IP"
+      ],
+      "infrastructure_type": "hosting/datacenter",
+      "hosting_provider": "unknown",
+      "geolocation": {
+        "country": "US",
+        "isp": "Mock ISP",
+        "usage_type": "Data Center/Web Hosting/Transit"
+      },
+      "recommendations": [
+        "Low risk IP"
+      ]
+    },
+    "source": "onion_crawling"
+  },
+  {
+    "ip_address": "162.247.74.27",
+    "timestamp": "2025-07-31T14:37:47.725237",
+    "data_sources": [
+      "mock_shodan",
+      "mock_abuseipdb",
+      "mock_bgpview"
+    ],
+    "shodan": {
+      "os": "Linux",
+      "ports": [
+        22,
+        80,
+        443
+      ],
+      "vulns": [],
+      "org": "Mock Organization",
+      "isp": "Mock ISP",
+      "country_code": "US",
+      "city": "Mock City"
+    },
+    "abuseipdb": {
+      "data": {
+        "ipAddress": "162.247.74.27",
+        "isPublic": true,
+        "ipVersion": 4,
+        "isWhitelisted": false,
+        "abuseConfidencePercentage": 0,
+        "countryCode": "US",
+        "usageType": "Data Center/Web Hosting/Transit",
+        "isp": "Mock ISP",
+        "domain": "mock-domain.com",
+        "totalReports": 0,
+        "numDistinctUsers": 0
+      }
+    },
+    "bgpview": {
+      "data": {
+        "ip": "162.247.74.27",
+        "ptr_record": "mock-ptr-162-247-74-27.com",
+        "rir_allocation": {
+          "rir_name": "ARIN",
+          "country_code": "US",
+          "date_allocated": "2000-01-01 00:00:00",
+          "allocation_status": "allocated"
+        },
+        "prefixes": [
+          {
+            "prefix": "162.247.74.27/24",
+            "ip": "162.247.74.27",
+            "cidr": 24,
+            "asn": {
+              "asn": 15169,
+              "name": "GOOGLE",
+              "description": "Google LLC",
+              "country_code": "US"
+            }
+          }
+        ]
+      }
+    },
+    "analysis": {
+      "risk_score": 10,
+      "risk_factors": [
+        "Hosting/Data center IP"
+      ],
+      "infrastructure_type": "hosting/datacenter",
+      "hosting_provider": "unknown",
+      "geolocation": {
+        "country": "US",
+        "isp": "Mock ISP",
+        "usage_type": "Data Center/Web Hosting/Transit"
+      },
+      "recommendations": [
+        "Low risk IP"
+      ]
+    },
+    "source": "onion_crawling"
+  },
+  {
+    "ip_address": "192.168.1.1",
+    "timestamp": "2025-07-31T14:37:49.156765",
+    "data_sources": [
+      "mock_shodan",
+      "mock_abuseipdb",
+      "mock_bgpview"
+    ],
+    "shodan": {
+      "os": "Linux",
+      "ports": [
+        22,
+        80,
+        443
+      ],
+      "vulns": [],
+      "org": "Mock Organization",
+      "isp": "Mock ISP",
+      "country_code": "US",
+      "city": "Mock City"
+    },
+    "abuseipdb": {
+      "data": {
+        "ipAddress": "192.168.1.1",
+        "isPublic": true,
+        "ipVersion": 4,
+        "isWhitelisted": false,
+        "abuseConfidencePercentage": 0,
+        "countryCode": "US",
+        "usageType": "Data Center/Web Hosting/Transit",
+        "isp": "Mock ISP",
+        "domain": "mock-domain.com",
+        "totalReports": 0,
+        "numDistinctUsers": 0
+      }
+    },
+    "bgpview": {
+      "data": {
+        "ip": "192.168.1.1",
+        "ptr_record": "mock-ptr-192-168-1-1.com",
+        "rir_allocation": {
+          "rir_name": "ARIN",
+          "country_code": "US",
+          "date_allocated": "2000-01-01 00:00:00",
+          "allocation_status": "allocated"
+        },
+        "prefixes": [
+          {
+            "prefix": "192.168.1.1/24",
+            "ip": "192.168.1.1",
+            "cidr": 24,
+            "asn": {
+              "asn": 15169,
+              "name": "GOOGLE",
+              "description": "Google LLC",
+              "country_code": "US"
+            }
+          }
+        ]
+      }
+    },
+    "analysis": {
+      "risk_score": 10,
+      "risk_factors": [
+        "Hosting/Data center IP"
+      ],
+      "infrastructure_type": "hosting/datacenter",
+      "hosting_provider": "unknown",
+      "geolocation": {
+        "country": "US",
+        "isp": "Mock ISP",
+        "usage_type": "Data Center/Web Hosting/Transit"
+      },
+      "recommendations": [
+        "Low risk IP"
+      ]
+    },
+    "source": "stix_feed_parsing"
+  },
+  {
+    "ip_address": "10.0.0.1",
+    "timestamp": "2025-07-31T14:37:50.694596",
+    "data_sources": [
+      "mock_shodan",
+      "mock_abuseipdb",
+      "mock_bgpview"
+    ],
+    "shodan": {
+      "os": "Linux",
+      "ports": [
+        22,
+        80,
+        443
+      ],
+      "vulns": [],
+      "org": "Mock Organization",
+      "isp": "Mock ISP",
+      "country_code": "US",
+      "city": "Mock City"
+    },
+    "abuseipdb": {
+      "data": {
+        "ipAddress": "10.0.0.1",
+        "isPublic": true,
+        "ipVersion": 4,
+        "isWhitelisted": false,
+        "abuseConfidencePercentage": 0,
+        "countryCode": "US",
+        "usageType": "Data Center/Web Hosting/Transit",
+        "isp": "Mock ISP",
+        "domain": "mock-domain.com",
+        "totalReports": 0,
+        "numDistinctUsers": 0
+      }
+    },
+    "bgpview": {
+      "data": {
+        "ip": "10.0.0.1",
+        "ptr_record": "mock-ptr-10-0-0-1.com",
+        "rir_allocation": {
+          "rir_name": "ARIN",
+          "country_code": "US",
+          "date_allocated": "2000-01-01 00:00:00",
+          "allocation_status": "allocated"
+        },
+        "prefixes": [
+          {
+            "prefix": "10.0.0.1/24",
+            "ip": "10.0.0.1",
+            "cidr": 24,
+            "asn": {
+              "asn": 15169,
+              "name": "GOOGLE",
+              "description": "Google LLC",
+              "country_code": "US"
+            }
+          }
+        ]
+      }
+    },
+    "analysis": {
+      "risk_score": 10,
+      "risk_factors": [
+        "Hosting/Data center IP"
+      ],
+      "infrastructure_type": "hosting/datacenter",
+      "hosting_provider": "unknown",
+      "geolocation": {
+        "country": "US",
+        "isp": "Mock ISP",
+        "usage_type": "Data Center/Web Hosting/Transit"
+      },
+      "recommendations": [
+        "Low risk IP"
+      ]
+    },
+    "source": "stix_feed_parsing"
+  },
+  {
+    "ip_address": "172.16.0.1",
+    "timestamp": "2025-07-31T14:37:52.333033",
+    "data_sources": [
+      "mock_shodan",
+      "mock_abuseipdb",
+      "mock_bgpview"
+    ],
+    "shodan": {
+      "os": "Linux",
+      "ports": [
+        22,
+        80,
+        443
+      ],
+      "vulns": [],
+      "org": "Mock Organization",
+      "isp": "Mock ISP",
+      "country_code": "US",
+      "city": "Mock City"
+    },
+    "abuseipdb": {
+      "data": {
+        "ipAddress": "172.16.0.1",
+        "isPublic": true,
+        "ipVersion": 4,
+        "isWhitelisted": false,
+        "abuseConfidencePercentage": 0,
+        "countryCode": "US",
+        "usageType": "Data Center/Web Hosting/Transit",
+        "isp": "Mock ISP",
+        "domain": "mock-domain.com",
+        "totalReports": 0,
+        "numDistinctUsers": 0
+      }
+    },
+    "bgpview": {
+      "data": {
+        "ip": "172.16.0.1",
+        "ptr_record": "mock-ptr-172-16-0-1.com",
+        "rir_allocation": {
+          "rir_name": "ARIN",
+          "country_code": "US",
+          "date_allocated": "2000-01-01 00:00:00",
+          "allocation_status": "allocated"
+        },
+        "prefixes": [
+          {
+            "prefix": "172.16.0.1/24",
+            "ip": "172.16.0.1",
+            "cidr": 24,
+            "asn": {
+              "asn": 15169,
+              "name": "GOOGLE",
+              "description": "Google LLC",
+              "country_code": "US"
+            }
+          }
+        ]
+      }
+    },
+    "analysis": {
+      "risk_score": 10,
+      "risk_factors": [
+        "Hosting/Data center IP"
+      ],
+      "infrastructure_type": "hosting/datacenter",
+      "hosting_provider": "unknown",
+      "geolocation": {
+        "country": "US",
+        "isp": "Mock ISP",
+        "usage_type": "Data Center/Web Hosting/Transit"
+      },
+      "recommendations": [
+        "Low risk IP"
+      ]
+    },
+    "source": "stix_feed_parsing"
+  }
+]

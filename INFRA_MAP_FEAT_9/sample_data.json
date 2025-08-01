@@ -1,0 +1,45 @@
+{
+  "extracted_iocs": [
+    {
+      "source": "marketplace_scraping",
+      "timestamp": "2025-07-31T09:00:00Z",
+      "ip_addresses": [
+        "8.8.8.8",
+        "1.1.1.1",
+        "185.220.101.182",
+        "104.244.76.13"
+      ],
+      "domains": [
+        "google.com",
+        "cloudflare.com",
+        "duckduckgo.com"
+      ]
+    },
+    {
+      "source": "onion_crawling",
+      "timestamp": "2025-07-31T08:45:00Z",
+      "ip_addresses": [
+        "199.87.154.255",
+        "45.33.32.156",
+        "162.247.74.27"
+      ],
+      "domains": [
+        "facebookwkhpilnemxj7asaniu7vnjjbiltxjqhye3mhbshg7kx5tfyd.onion",
+        "3g2upl4pq6kufc4m.onion"
+      ]
+    },
+    {
+      "source": "stix_feed_parsing",
+      "timestamp": "2025-07-31T08:30:00Z", 
+      "ip_addresses": [
+        "192.168.1.1",
+        "10.0.0.1",
+        "172.16.0.1"
+      ],
+      "domains": [
+        "malicious-c2.example.com",
+        "phishing-site.example.org"
+      ]
+    }
+  ]
+}
