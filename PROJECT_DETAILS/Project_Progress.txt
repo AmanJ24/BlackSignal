@@ -14,9 +14,9 @@ This project automates 15 core features for dark web monitoring, threat intellig
 extraction, and threat actor profiling using n8n, Python, and Free/Public APIs.
 
 TOTAL FEATURES PLANNED: 15 (Based on features.txt and osint_pipeline.md)
-FEATURES COMPLETED: 12
+FEATURES COMPLETED: 13
 FEATURES IN PROGRESS: 0
-FEATURES REMAINING: 3
+FEATURES REMAINING: 2
 
 ================================================================================
 ✅ COMPLETED FEATURES
@@ -237,6 +237,38 @@ FEATURES REMAINING: 3
    - Structured output with metadata
    - Fallback configuration support
 
+--------------------------------------------------------------------------------
+
+🔹 FEATURE 13: FEAT_13_REPUTATION_SCORING - Reputation Scoring
+   Status: ✅ COMPLETED
+   Directory: /home/aman/PROJECT_DARK_WEB/FEAT_13_REPUTATION_SCORING/
+   
+   What it does:
+   - Assigns reputation scores to vendors based on feedback, BTC reuse, and profile mentions
+   - Evaluates vendor trustworthiness using multiple scoring factors
+   - Processes vendor data and calculates comprehensive reputation metrics
+   - Outputs structured JSON with reputation scores for n8n integration
+   
+   Files:
+   - reputation_scorer.py: Main reputation scoring script
+   - vendor_data.json: Sample vendor data for testing
+   - requirements.txt: Python dependencies
+   - README.md: Feature documentation
+   
+   Current Configuration:
+   - Webhook: https://sipiv63984.app.n8n.cloud/webhook-test/reputation-scoring
+   - Mock vendor data with feedback scores and BTC transaction history
+   - Scoring algorithm based on positive/negative feedback and transaction patterns
+   - Supports: vendor feedback analysis, BTC address reuse detection, profile mention tracking
+   
+   Features:
+   - Multi-factor reputation scoring algorithm
+   - Vendor feedback analysis (positive/negative)
+   - BTC transaction pattern recognition
+   - Profile mention frequency tracking
+   - Structured output with detailed scoring metrics
+   - Mock data support for testing without external dependencies
+
 ================================================================================
 
 ✅ Python Virtual Environment: /home/aman/PROJECT_DARK_WEB/venv/
@@ -283,20 +315,24 @@ Dependencies Installed:
    - Add SHODAN_API_KEY=your_key_here
 
 ================================================================================
-📋 REMAINING FEATURES TO BUILD (10 Features)
+📋 REMAINING FEATURES TO BUILD (2 Features)
 ================================================================================
 
 Based on PROJECT_DETAILS/osint_pipeline.md:
 
+✅ Feature 1: Tor Relay Enumeration - COMPLETED!
+✅ Feature 2: .onion Domain Discovery - COMPLETED!
+✅ Feature 3: Marketplace Scraping - COMPLETED!
+✅ Feature 4: API Enrichment - COMPLETED!
 ✅ Feature 5: STIX/TAXII Feed Parsing - COMPLETED!
-✅ Feature 6: IOC Extraction with Regex - COMPLETED!
-🔲 Feature 7: Named Entity Recognition (NER)
-🔲 Feature 8: Hash Extraction (Malware IOCs)
-🔲 Feature 9: Infrastructure Mapping
+✅ Feature 6: IOC Extraction - COMPLETED!
+✅ Feature 7: Named Entity Recognition (NER) - COMPLETED!
+✅ Feature 8: Hash Extraction (Malware IOCs) - COMPLETED!
+✅ Feature 9: Infrastructure Mapping - COMPLETED!
 ✅ Feature 10: Geolocation Correlation - COMPLETED!
-🔲 Feature 11: Handle Correlation
-🔲 Feature 12: Behavioral Analysis
-🔲 Feature 13: Reputation Scoring
+✅ Feature 11: Handle Correlation - COMPLETED!
+✅ Feature 12: Behavioral Analysis - COMPLETED!
+✅ Feature 13: Reputation Scoring - COMPLETED!
 🔲 Feature 14: MITRE ATT&CK TTP Mapping
 🔲 Feature 15: Affiliate Recruitment/Payment Analysis
 

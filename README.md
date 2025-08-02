@@ -4,14 +4,14 @@
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Features](https://img.shields.io/badge/Features-12%2F15-green.svg)](https://github.com/AmanJ24/darkweb-osint-automater)
+[![Features](https://img.shields.io/badge/Features-13%2F15-green.svg)](https://github.com/AmanJ24/darkweb-osint-automater)
 [![Status](https://img.shields.io/badge/Status-Active%20Development-brightgreen.svg)](https://github.com/AmanJ24/darkweb-osint-automater)
 
 ---
 
 ## 📊 Project Status
 
-**Features Completed: 12 / 15 (80% Complete)**
+**Features Completed: 13 / 15 (87% Complete)**
 
 ✅ **Active Features:**
 - **Feature 1**: Tor Relay Enumeration
@@ -26,8 +26,9 @@
 - **Feature 10**: Geolocation Correlation
 - **Feature 11**: Handle Correlation
 - **Feature 12**: Behavioral Analysis
+- **Feature 13**: Reputation Scoring
 
-🔄 **In Development:** Features 13-15
+🔄 **In Development:** Features 14-15
 
 ---
 
