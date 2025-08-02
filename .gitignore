@@ -2,8 +2,12 @@
 .secrets.env
 *.env
 config.json
+config.py
 api_keys.txt
 secrets/
+To-Do.txt
+ToDo.txt
+todo.txt
 
 # Python
 __pycache__/
