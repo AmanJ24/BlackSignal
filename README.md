@@ -4,14 +4,14 @@
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Features](https://img.shields.io/badge/Features-9%2F15-green.svg)](https://github.com/AmanJ24/darkweb-osint-automater)
+[![Features](https://img.shields.io/badge/Features-12%2F15-green.svg)](https://github.com/AmanJ24/darkweb-osint-automater)
 [![Status](https://img.shields.io/badge/Status-Active%20Development-brightgreen.svg)](https://github.com/AmanJ24/darkweb-osint-automater)
 
 ---
 
 ## 📊 Project Status
 
-**Features Completed: 9 / 15 (60% Complete)**
+**Features Completed: 12 / 15 (80% Complete)**
 
 ✅ **Active Features:**
 - **Feature 1**: Tor Relay Enumeration
@@ -20,11 +20,14 @@
 - **Feature 4**: API Enrichment (Multi-source)
 - **Feature 5**: STIX/TAXII Feed Parsing
 - **Feature 6**: IOC Extraction with Regex
+- **Feature 7**: Named Entity Recognition (NER)
+- **Feature 8**: Hash Extraction & Analysis
+- **Feature 9**: Infrastructure Mapping
 - **Feature 10**: Geolocation Correlation
 - **Feature 11**: Handle Correlation
-- **Feature 12**: Behavioral Analysis 🆕
+- **Feature 12**: Behavioral Analysis
 
-🔄 **In Development:** Features 7-9, 13-15
+🔄 **In Development:** Features 13-15
 
 ---
 
@@ -50,14 +53,14 @@ This project is a **modular, automated OSINT pipeline** for dark web monitoring 
 - 📡 **API Enrichment** - Multi-source IOC enrichment (IP-API, BGPView, Shodan, etc.)
 - 📄 **STIX/TAXII Integration** - Threat feed parsing and normalization
 - 🔎 **IOC Extraction** - Comprehensive regex-based indicator extraction
+- 🧠 **Named Entity Recognition (NER)** - Extract names, organizations, and entities
+- 🔍 **Hash Extraction & Analysis** - Malware IOC detection and analysis
+- 🌐 **Infrastructure Mapping** - C2 domains and bulletproof hosting detection
 - 🌍 **Geolocation Correlation** - Enhanced geographic threat analysis
 - 🔗 **Handle Correlation** - Cross-platform handle tracking and matching
 - 📊 **Behavioral Analysis** - Vendor behavior patterns, sentiment analysis, and threat scoring
 
 ### 🚀 **Upcoming Features**
-- 🧠 **Named Entity Recognition (NER)** - Extract names, organizations, and entities
-- 🔍 **Hash Extraction & Analysis** - Malware IOC detection and analysis
-- 🌐 **Infrastructure Mapping** - C2 domains and bulletproof hosting detection
 - 🏆 **Reputation Scoring** - Vendor trust and risk assessment
 - 🎯 **MITRE ATT&CK TTP Mapping** - Link activities to attack techniques
 - 💰 **Affiliate Recruitment Analysis** - RaaS and affiliate program detection
@@ -90,6 +93,9 @@ PROJECT_DARK_WEB/
 ├── FEAT_4_API_ENRICH/            # Multi-API enrichment
 ├── FEAT_5_STIX_TAXII/            # Threat feed parsing
 ├── FEAT_6_IOC_EXTRACT/           # IOC extraction
+├── FEAT_7_NER/                   # Named Entity Recognition
+├── FEAT_8_HASH_EXTRACT/          # Hash extraction and analysis
+├── FEAT_9_INFRA_MAP/             # Infrastructure mapping
 ├── FEAT_10_GEO_CORR/             # Geolocation correlation
 ├── FEAT_11_HANDLE_CORR/          # Handle correlation
 ├── FEAT_12_BEHAVIORAL_ANALYSIS/  # Behavioral analysis
@@ -187,9 +193,9 @@ Each feature sends results to n8n webhooks. Expected endpoints:
 | **Feature 10** | ✅ | Geolocation Correlation | `geo-correlation` |
 | **Feature 11** | ✅ | Handle Correlation | `handle-correlation` |
 | **Feature 12** | ✅ | Behavioral Analysis | `behavioral-analysis` |
-| **Feature 7** | 🔄 | Named Entity Recognition | `ner-analysis` |
-| **Feature 8** | 🔄 | Hash Extraction | `hash-analysis` |
-| **Feature 9** | 🔄 | Infrastructure Mapping | `infra-mapping` |
+| **Feature 7** | ✅ | Named Entity Recognition | `ner-analysis` |
+| **Feature 8** | ✅ | Hash Extraction | `hash-analysis` |
+| **Feature 9** | ✅ | Infrastructure Mapping | `infra-mapping` |
 | **Feature 13** | 🔄 | Reputation Scoring | `reputation-scoring` |
 | **Feature 14** | 🔄 | MITRE ATT&CK Mapping | `mitre-mapping` |
 | **Feature 15** | 🔄 | Affiliate Analysis | `affiliate-analysis` |
