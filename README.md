@@ -2,22 +2,29 @@
 
 **Automated Dark Web Monitoring & Threat Intelligence Pipeline built with n8n, Python, and Free-tier APIs**
 
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Features](https://img.shields.io/badge/Features-9%2F15-green.svg)](https://github.com/AmanJ24/darkweb-osint-automater)
+[![Status](https://img.shields.io/badge/Status-Active%20Development-brightgreen.svg)](https://github.com/AmanJ24/darkweb-osint-automater)
+
 ---
 
 ## 📊 Project Status
 
-**Features Completed: 7 / 15**
+**Features Completed: 9 / 15 (60% Complete)**
 
 ✅ **Active Features:**
-- Tor Relay Enumeration
-- .onion Domain Discovery
-- Marketplace Scraping
-- API Enrichment (Multi-source)
-- STIX/TAXII Feed Parsing
-- IOC Extraction with Regex
-- Geolocation Correlation
+- **Feature 1**: Tor Relay Enumeration
+- **Feature 2**: .onion Domain Discovery  
+- **Feature 3**: Marketplace Scraping
+- **Feature 4**: API Enrichment (Multi-source)
+- **Feature 5**: STIX/TAXII Feed Parsing
+- **Feature 6**: IOC Extraction with Regex
+- **Feature 10**: Geolocation Correlation
+- **Feature 11**: Handle Correlation
+- **Feature 12**: Behavioral Analysis 🆕
 
-🔄 **In Development:** Features 7-9, 11-15
+🔄 **In Development:** Features 7-9, 13-15
 
 ---
 
@@ -39,21 +46,21 @@ This project is a **modular, automated OSINT pipeline** for dark web monitoring 
 ### ✅ **Completed Features**
 - 🌐 **Tor Relay Enumeration** - Discovers active Tor infrastructure
 - 🧅 **Automated .onion Discovery** - Recursive hidden service crawling
-- 🛒 **Marketplace Scraping** - Extracts vendor/product intelligence
+- 🛍 **Marketplace Scraping** - Extracts vendor/product intelligence
 - 📡 **API Enrichment** - Multi-source IOC enrichment (IP-API, BGPView, Shodan, etc.)
 - 📄 **STIX/TAXII Integration** - Threat feed parsing and normalization
 - 🔎 **IOC Extraction** - Comprehensive regex-based indicator extraction
 - 🌍 **Geolocation Correlation** - Enhanced geographic threat analysis
+- 🔗 **Handle Correlation** - Cross-platform handle tracking and matching
+- 📊 **Behavioral Analysis** - Vendor behavior patterns, sentiment analysis, and threat scoring
 
 ### 🚀 **Upcoming Features**
-- 🧠 Named Entity Recognition (NER)
-- 🔍 Hash Extraction & Analysis
-- 🌐 Infrastructure Mapping
-- 🔗 Handle Correlation
-- 📊 Behavioral Analysis
-- 🏆 Reputation Scoring
-- 🎯 MITRE ATT&CK TTP Mapping
-- 💰 Affiliate Recruitment Analysis
+- 🧠 **Named Entity Recognition (NER)** - Extract names, organizations, and entities
+- 🔍 **Hash Extraction & Analysis** - Malware IOC detection and analysis
+- 🌐 **Infrastructure Mapping** - C2 domains and bulletproof hosting detection
+- 🏆 **Reputation Scoring** - Vendor trust and risk assessment
+- 🎯 **MITRE ATT&CK TTP Mapping** - Link activities to attack techniques
+- 💰 **Affiliate Recruitment Analysis** - RaaS and affiliate program detection
 
 ---
 
@@ -76,17 +83,148 @@ This project is a **modular, automated OSINT pipeline** for dark web monitoring 
 
 ```bash
 PROJECT_DARK_WEB/
-├── PROJECT_DETAILS/          # Project documentation & progress
-├── TOR_RELAY_FEAT_1/         # Tor relay enumeration
-├── ONION_CRAWL_FEAT_2/       # .onion domain discovery
-├── MARKET_SCRAPE_FEAT_3/     # Marketplace scraping
-├── API_ENRICH_FEAT_4/        # Multi-API enrichment
-├── STIX_TAXII_FEAT_5/        # Threat feed parsing
-├── IOC_EXTRACT_FEAT_6/       # IOC extraction
-├── GEO_CORR_FEAT_10/         # Geolocation correlation
-├── logs/                     # Centralized logging
-├── venv/                     # Python virtual environment
-├── config.py                 # Global configuration
-├── requirements.txt          # Dependencies
-└── README.md                 # This file
+├── PROJECT_DETAILS/              # Project documentation & progress
+├── FEAT_1_TOR_RELAY/             # Tor relay enumeration
+├── FEAT_2_ONION_CRAWL/           # .onion domain discovery
+├── FEAT_3_MARKET_SCRAPE/         # Marketplace scraping
+├── FEAT_4_API_ENRICH/            # Multi-API enrichment
+├── FEAT_5_STIX_TAXII/            # Threat feed parsing
+├── FEAT_6_IOC_EXTRACT/           # IOC extraction
+├── FEAT_10_GEO_CORR/             # Geolocation correlation
+├── FEAT_11_HANDLE_CORR/          # Handle correlation
+├── FEAT_12_BEHAVIORAL_ANALYSIS/  # Behavioral analysis
+├── logs/                         # Centralized logging
+├── venv/                         # Python virtual environment
+├── requirements.txt              # Dependencies
+└── README.md                     # This file
+```
 
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+- **Python 3.11+**
+- **Tor Browser** or **Tor daemon** (for .onion access)
+- **n8n Cloud Account** (free tier available)
+
+### Installation
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/AmanJ24/darkweb-osint-automater.git
+   cd PROJECT_DARK_WEB
+   ```
+
+2. **Set up virtual environment:**
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate  # Linux/Mac
+   # or
+   venv\Scripts\activate     # Windows
+   ```
+
+3. **Install dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Configure Tor (if needed):**
+   - Install Tor: `sudo apt install tor` (Linux)
+   - Start Tor service: `sudo systemctl start tor`
+   - Ensure SOCKS5 proxy on `127.0.0.1:9050`
+
+### Running Features
+
+Each feature can be run independently:
+
+```bash
+# Feature 4: API Enrichment
+cd FEAT_4_API_ENRICH
+python3 api_enrichment.py
+
+# Feature 6: IOC Extraction  
+cd FEAT_6_IOC_EXTRACT
+python3 ioc_extractor.py
+
+# Feature 12: Behavioral Analysis
+cd FEAT_12_BEHAVIORAL_ANALYSIS
+python3 behavioral_analysis.py
+```
+
+---
+
+## ⚙️ Configuration
+
+### API Keys (Optional)
+For enhanced functionality, add API keys to `.secrets.env`:
+```bash
+VIRUSTOTAL_API_KEY=your_key_here
+ABUSEIPDB_API_KEY=your_key_here
+SHODAN_API_KEY=your_key_here
+```
+
+### n8n Webhook Setup
+Each feature sends results to n8n webhooks. Expected endpoints:
+- `api-enrich`
+- `ioc-extract`
+- `geo-correlation`
+- `handle-correlation`
+- `behavioral-analysis`
+
+---
+
+## 📊 Feature Details
+
+| Feature | Status | Description | Webhook Endpoint |
+|---------|--------|-------------|------------------|
+| **Feature 1** | ✅ | Tor Relay Enumeration | `tor-relays` |
+| **Feature 2** | ✅ | .onion Domain Discovery | `onion-discovery` |
+| **Feature 3** | ✅ | Marketplace Scraping | `market-scrape` |
+| **Feature 4** | ✅ | API Enrichment | `api-enrich` |
+| **Feature 5** | ✅ | STIX/TAXII Parsing | `stix-taxii` |
+| **Feature 6** | ✅ | IOC Extraction | `ioc-extract` |
+| **Feature 10** | ✅ | Geolocation Correlation | `geo-correlation` |
+| **Feature 11** | ✅ | Handle Correlation | `handle-correlation` |
+| **Feature 12** | ✅ | Behavioral Analysis | `behavioral-analysis` |
+| **Feature 7** | 🔄 | Named Entity Recognition | `ner-analysis` |
+| **Feature 8** | 🔄 | Hash Extraction | `hash-analysis` |
+| **Feature 9** | 🔄 | Infrastructure Mapping | `infra-mapping` |
+| **Feature 13** | 🔄 | Reputation Scoring | `reputation-scoring` |
+| **Feature 14** | 🔄 | MITRE ATT&CK Mapping | `mitre-mapping` |
+| **Feature 15** | 🔄 | Affiliate Analysis | `affiliate-analysis` |
+
+---
+
+## 🔒 Security Notes
+
+- **Tor Usage**: All .onion requests route through Tor SOCKS5 proxy
+- **API Keys**: Stored in `.secrets.env` (excluded from version control)
+- **Rate Limiting**: Implemented for all external API calls
+- **Error Handling**: Comprehensive exception handling for network failures
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to:
+- Report bugs and issues
+- Suggest new features
+- Submit pull requests
+- Improve documentation
+
+---
+
+## 📜 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## ⚠️ Disclaimer
+
+This tool is for **educational and research purposes only**. Users are responsible for complying with applicable laws and regulations. The authors assume no liability for misuse of this software.
+
+---
+
+**Built with ❤️ for the cybersecurity community**
