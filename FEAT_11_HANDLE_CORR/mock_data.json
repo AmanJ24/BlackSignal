@@ -1,0 +1,61 @@
+{
+  "source": "marketplace_scraper",
+  "extracted_handles": [
+    {
+      "handle": "DarkVendor123",
+      "platform": "marketplace_alpha",
+      "first_seen": "2025-08-01T10:00:00Z",
+      "context": "vendor profile",
+      "metadata": {
+        "btc_address": "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa",
+        "products": ["malware", "stolen_data"],
+        "reputation_score": 85
+      }
+    },
+    {
+      "handle": "CyberMaster99",
+      "platform": "forum_beta",
+      "first_seen": "2025-07-15T14:30:00Z",
+      "context": "forum post",
+      "metadata": {
+        "post_count": 245,
+        "join_date": "2024-12-01",
+        "reputation": "trusted_member"
+      }
+    },
+    {
+      "handle": "ShadowDealer",
+      "platform": "marketplace_gamma",
+      "first_seen": "2025-06-20T09:15:00Z",
+      "context": "vendor listing",
+      "metadata": {
+        "btc_address": "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh",
+        "products": ["ransomware", "exploits"],
+        "total_sales": 150
+      }
+    },
+    {
+      "handle": "AnonymousHacker",
+      "platform": "telegram_channel",
+      "first_seen": "2025-08-01T07:00:00Z",
+      "context": "channel admin",
+      "metadata": {
+        "subscribers": 1250,
+        "channel_type": "private",
+        "activity_level": "high"
+      }
+    },
+    {
+      "handle": "DarkVendor123",
+      "platform": "marketplace_delta",
+      "first_seen": "2025-07-28T16:45:00Z",
+      "context": "vendor profile",
+      "metadata": {
+        "btc_address": "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa",
+        "products": ["malware", "stolen_data", "credentials"],
+        "reputation_score": 92
+      }
+    }
+  ],
+  "timestamp": "2025-08-01T07:06:00Z"
+}
