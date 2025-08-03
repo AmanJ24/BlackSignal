@@ -269,6 +269,40 @@ FEATURES REMAINING: 0
    - Structured output with detailed scoring metrics
    - Mock data support for testing without external dependencies
 
+--------------------------------------------------------------------------------
+
+🔹 FEATURE 15: FEAT_15_AFFILIATE_ANALYSIS - Affiliate Recruitment/Payment Analysis
+   Status: ✅ COMPLETED
+   Directory: /home/aman/PROJECT_DARK_WEB/FEAT_15_AFFILIATE_ANALYSIS/
+   
+   What it does:
+   - Detects RaaS structures by analyzing BTC reuse patterns, affiliate referrals, and promotional posts
+   - Analyzes content for recruitment keywords, payment structures, and hierarchical indicators
+   - Calculates risk scores based on affiliate mentions, BTC address reuse, and organizational patterns
+   - Identifies potential ransomware-as-a-service operations and affiliate networks
+   
+   Files:
+   - affiliate_analysis.py: Main affiliate analysis script with comprehensive pattern detection
+   - sample_posts.json: Sample marketplace posts for testing
+   - affiliate_analysis_results.json: Output results from analysis
+   - requirements.txt: Python dependencies
+   - README.md: Feature documentation
+   
+   Current Configuration:
+   - Webhook: https://sipiv63984.app.n8n.cloud/webhook-test/affiliate-analysis
+   - Mock marketplace post data with affiliate recruitment patterns
+   - Multi-pattern analysis including BTC reuse, payment keywords, hierarchy terms
+   - Risk assessment with HIGH/MEDIUM/LOW/MINIMAL levels
+   
+   Features:
+   - BTC address reuse pattern detection across posts/authors
+   - Affiliate keyword detection (partner, team, recruit, commission, etc.)
+   - Payment structure analysis (percentages, profit sharing, cuts)
+   - Hierarchical structure detection (admin, leader, supervisor, etc.)
+   - Author behavior pattern analysis with recruitment scoring
+   - Risk level assessment with detailed findings
+   - Comprehensive JSON output for n8n webhook integration
+
 ================================================================================
 
 ✅ Python Virtual Environment: /home/aman/PROJECT_DARK_WEB/venv/
