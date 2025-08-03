@@ -1,0 +1,107 @@
+{
+  "timestamp": "2025-08-03T13:43:34.337624",
+  "analysis_type": "affiliate_recruitment_payment",
+  "input_stats": {
+    "total_posts": 5,
+    "unique_authors": 4,
+    "posts_analyzed": 5
+  },
+  "btc_reuse_analysis": {
+    "reused_addresses_count": 1,
+    "reused_addresses": {
+      "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa": {
+        "usage_count": 3,
+        "unique_authors": 2,
+        "authors": [
+          "MalwareKing",
+          "CryptoPartner99"
+        ],
+        "posts": [
+          {
+            "post_id": "post_001",
+            "author": "CryptoPartner99",
+            "content_snippet": "Looking for affiliate partners - 60% commission Join our team and earn 60% commission on all sales. ..."
+          },
+          {
+            "post_id": "post_002",
+            "author": "MalwareKing",
+            "content_snippet": "Team expansion - hiring skilled members Our group is expanding! Looking for dedicated members to joi..."
+          },
+          {
+            "post_id": "post_004",
+            "author": "CryptoPartner99",
+            "content_snippet": "New tool release - partners get early access Latest version available for all team members. Commissi..."
+          }
+        ]
+      }
+    }
+  },
+  "author_analysis": {
+    "total_authors": 4,
+    "high_risk_authors": 3,
+    "author_details": {
+      "CryptoPartner99": {
+        "posts": [
+          "post_001",
+          "post_004"
+        ],
+        "affiliate_mentions": 4,
+        "payment_mentions": 3,
+        "btc_addresses": [
+          "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"
+        ],
+        "total_posts": 2,
+        "recruitment_score": 74,
+        "avg_recruitment_score": 37.0
+      },
+      "MalwareKing": {
+        "posts": [
+          "post_002"
+        ],
+        "affiliate_mentions": 4,
+        "payment_mentions": 1,
+        "btc_addresses": [
+          "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"
+        ],
+        "total_posts": 1,
+        "recruitment_score": 53,
+        "avg_recruitment_score": 53.0
+      },
+      "RansomAdmin": {
+        "posts": [
+          "post_003"
+        ],
+        "affiliate_mentions": 2,
+        "payment_mentions": 2,
+        "btc_addresses": [],
+        "total_posts": 1,
+        "recruitment_score": 36,
+        "avg_recruitment_score": 36.0
+      },
+      "IndependentSeller": {
+        "posts": [
+          "post_005"
+        ],
+        "affiliate_mentions": 0,
+        "payment_mentions": 0,
+        "btc_addresses": [
+          "1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN2"
+        ],
+        "total_posts": 1,
+        "recruitment_score": 5,
+        "avg_recruitment_score": 5.0
+      }
+    }
+  },
+  "hierarchy_analysis": {
+    "hierarchy_indicators_found": 0,
+    "indicators": []
+  },
+  "risk_assessment": {
+    "overall_risk_level": "MEDIUM",
+    "key_findings": [
+      "Found 1 BTC addresses reused across multiple posts/authors",
+      "Identified 3 high-risk authors with recruitment indicators"
+    ]
+  }
+}
