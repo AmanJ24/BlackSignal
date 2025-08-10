@@ -14,9 +14,9 @@ This project automates 15 core features for dark web monitoring, threat intellig
 extraction, and threat actor profiling using n8n, Python, and Free/Public APIs.
 
 TOTAL FEATURES PLANNED: 15 (Based on features.txt and osint_pipeline.md)
-FEATURES COMPLETED: 15
+FEATURES COMPLETED: 15 🎉 ALL COMPLETE!
 FEATURES IN PROGRESS: 0
-FEATURES REMAINING: 0
+FEATURES REMAINING: 0 🎉 PROJECT COMPLETE!
 
 ================================================================================
 ✅ COMPLETED FEATURES
@@ -267,6 +267,38 @@ FEATURES REMAINING: 0
    - BTC transaction pattern recognition
    - Profile mention frequency tracking
    - Structured output with detailed scoring metrics
+   - Mock data support for testing without external dependencies
+
+--------------------------------------------------------------------------------
+
+🔹 FEATURE 14: FEAT_14_MITRE_ATTACK - MITRE ATT&CK TTP Mapping
+   Status: ✅ COMPLETED ⭐ JUST COMPLETED!
+   Directory: /home/aman/PROJECT_DARK_WEB/FEAT_14_MITRE_ATTACK/
+   
+   What it does:
+   - Maps observed behaviors and findings to MITRE ATT&CK techniques using keyword matching
+   - Links threat descriptions to specific TTPs (Tactics, Techniques, and Procedures)
+   - Provides structured output for threat attribution and classification
+   - Uses pattern recognition to identify attack techniques from text descriptions
+   
+   Files:
+   - mitre_mapper.py: Main TTP mapping script with MitreAttackMapper class
+   - mitre_attack_data.json: Sample MITRE ATT&CK dataset for testing
+   - requirements.txt: Python dependencies
+   - README.md: Feature documentation
+   
+   Current Configuration:
+   - Webhook: https://sipiv63984.app.n8n.cloud/webhook-test/mitre-attack
+   - Sample MITRE ATT&CK dataset with common techniques (Phishing, Credential Dumping)
+   - Keyword matching logic for technique identification
+   - Structured JSON output with TTP mappings and confidence scores
+   
+   Features:
+   - Keyword-based pattern matching for threat technique identification
+   - MITRE ATT&CK technique mapping (T1566 Phishing, T1003 Credential Dumping, etc.)
+   - Confidence scoring for matched techniques
+   - Extensible dataset structure for additional techniques
+   - JSON serializable output for webhook integration
    - Mock data support for testing without external dependencies
 
 --------------------------------------------------------------------------------
