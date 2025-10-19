@@ -20,5 +20,5 @@ with Controller.from_port(port=TOR_CONTROL_PORT) as controller:
         })
 
     import json
-    print(json.dumps(output[:10], indent=2))  # Only first 10 relays for now
+    print(json.dumps(output, indent=2))  # Only first 10 relays for now
 

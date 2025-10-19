@@ -61,6 +61,8 @@ class HashExtractor:
         }
         
         try:
+            time.sleep(15)
+
             response = requests.get(
                 f'{self.virustotal_base_url}/{hash_value}', 
                 headers=headers,
@@ -98,9 +100,6 @@ class HashExtractor:
                 "error": "Request failed",
                 "message": str(e)
             }
-            
-        # Rate limiting - VirusTotal free tier allows 4 requests per minute
-        time.sleep(15)  # Wait 15 seconds between requests
     
     def send_to_webhook(self, data: Dict[str, Any]) -> bool:
         """Send processed data to n8n webhook"""
@@ -232,5 +231,5 @@ if __name__ == "__main__":
     print("✅ Hash extraction completed!")
     
     # Uncomment to send to webhook in production
-    # for result in result_data:
-    #     extractor.send_to_webhook(result)
+    for result in result_data:
+        extractor.send_to_webhook(result)

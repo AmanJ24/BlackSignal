@@ -87,7 +87,7 @@ class IOCExtractor:
             
             # SHA1 hashes
             'sha1': re.compile(
-                r'\b[a-fA-F0-9]{40}\b'
+                 r'\b(?<!0x)[a-fA-F0-9]{40}\b', re.IGNORECASE
             ),
             
             # SHA256 hashes
@@ -341,3 +341,28 @@ class IOCExtractor:
         logger.info(f"IOC extraction completed. Found {enriched_data['total_iocs']} IOCs across {len(enriched_data['ioc_types_found'])} types")
         
         return enriched_data
+
+if __name__ == "__main__":
+    # Sample text containing various IOCs for demonstration
+    sample_text = """
+    From: attacker@evil-corp.com
+    To: victim@example.com
+    
+    Please review the attached invoice. It is not a virus.
+    Our new payment address is 1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa.
+    
+    Our C2 server is located at 198.51.100.25 and also at malicious-site.net.
+    You can download the file from http://phishing-link.com/download.exe.
+    The file hash is d41d8cd98f00b204e9800998ecf8427e.
+    Also check our hidden service at 3g2upl4pq6kufc4m.onion.
+    """
+    
+    logger.info("Initializing IOC Extractor...")
+    extractor = IOCExtractor()
+    
+    # Process the text and send results to the webhook
+    results = extractor.process_text(sample_text, send_webhook=True)
+    
+    logger.info("--- IOC Extraction Complete ---")
+    print(json.dumps(results, indent=2))
+    logger.info("--- End of Report ---")

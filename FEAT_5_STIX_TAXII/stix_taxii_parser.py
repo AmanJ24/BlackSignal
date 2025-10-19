@@ -41,8 +41,9 @@ FREE_FEED_SOURCES = {
     'abuse_ch_malware': {
         'name': 'Abuse.ch Malware Bazaar',
         'type': 'json',
-        'url': 'https://mb-api.abuse.ch/api/v1/samples/recent/',
-        'format': 'custom'
+        'url': 'https://mb-api.abuse.ch/api/v1/', # Correct URL
+        'format': 'custom',
+        'post_data': {'query': 'get_recent'} # Add required POST data
     },
     'abuse_ch_urlhaus': {
         'name': 'Abuse.ch URLhaus',
@@ -87,13 +88,14 @@ class STIXTAXIIParser:
                 return self.get_test_data()
                 
             # Special handling for abuse.ch APIs (they require POST requests)
-            if 'abuse.ch' in feed_config['url']:
+            if feed_config.get('post_data'):
                 response = self.session.post(
-                    feed_config['url'],
-                    data={},  # Empty POST data
-                    timeout=30,
-                    verify=True
-                )
+                feed_config['url'],
+                data=feed_config['post_data'], # Use the correct POST data
+                timeout=30,
+                verify=True
+            )
+
             else:
                 response = self.session.get(
                     feed_config['url'], 
@@ -181,10 +183,11 @@ class STIXTAXIIParser:
         """Parse Abuse.ch URLhaus feed"""
         indicators = []
         
-        if not isinstance(data, list):
+        if not isinstance(data, list) or 'urls' not in data:
+            logger.warning("URLhaus response does not contain 'urls' key.")
             return indicators
             
-        for item in data[:50]:  # Limit to 50 most recent
+        for item in data.get('urls', [])[:50]:  # Limit to 50 most recent
             try:
                 indicator = {
                     'type': 'malicious_url',

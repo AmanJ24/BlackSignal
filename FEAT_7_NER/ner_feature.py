@@ -1,5 +1,7 @@
 import spacy
 import json
+import requests
+from config import get_n8n_webhook_url
 from datetime import datetime
 
 # Load English tokenizer, tagger, parser, NER, and word vectors
@@ -59,6 +61,21 @@ def load_sample_data(json_file_path="sample_dark_web_data.json"):
         print(f"❌ Error parsing JSON: {e}")
         return []
 
+def send_to_webhook(data: dict):
+    """Sends the NER results to the n8n webhook."""
+    webhook_url = get_n8n_webhook_url("ner-analysis")
+    if not webhook_url:
+        logger.warning("Webhook URL for 'ner-analysis' not configured. Skipping.")
+        return False
+    try:
+        response = requests.post(webhook_url, json=data, timeout=15)
+        response.raise_for_status()
+        logger.info("Successfully sent NER data to webhook.")
+        return True
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Failed to send NER data to webhook: {e}")
+        return False
+    
 # Test with dark web marketplace sample data
 if __name__ == "__main__":
     # Load data from JSON file
@@ -78,7 +95,6 @@ if __name__ == "__main__":
         # Add source information to result
         result['source'] = entry['source']
         result['source_timestamp'] = entry.get('timestamp', 'Unknown')
-        
-        # This result would be sent to n8n webhook in production
-        print("\n[Ready for n8n webhook integration]")
-        print(json.dumps(result, indent=2))
+       
+        print("\n[Sending result to n8n webhook...]")
+        send_to_webhook(result)

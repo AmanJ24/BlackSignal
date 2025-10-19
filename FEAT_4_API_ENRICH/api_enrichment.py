@@ -134,10 +134,10 @@ class APIEnricher:
                                           headers=headers, params=params, timeout=10)
                 if response.status_code == 200:
                     data = response.json()
-                    if data.get('success'):
+                    if 'data' in data: # Check if 'data' key exists
                         abuse_data = data.get('data', {})
                         results['abuse'] = {
-                            'confidence': abuse_data.get('abuseConfidencePercentage'),
+                            'confidence': abuse_data.get('abuseConfidenceScore'), # Correct key
                             'is_whitelisted': abuse_data.get('isWhitelisted'),
                             'country_code': abuse_data.get('countryCode'),
                             'usage_type': abuse_data.get('usageType'),
@@ -386,13 +386,14 @@ def main():
     
     logger.info(f"Enriched {len(enriched_results)} IOCs")
     
-    # Print results for verification (webhook will be set up later)
+    # Print results for verification and send to webhook
     if enriched_results:
         logger.info("=== ENRICHMENT RESULTS ===")
-        for result in enriched_results:
-            logger.info(f"Enriched: {result}")
-        logger.info("Feature 4 is working correctly! Webhook can be set up later.")
-        # enricher.send_to_n8n(enriched_results)  # Commented out until webhook is ready
+        # Pretty print for console verification
+        print(json.dumps(enriched_results, indent=2))
+        
+        logger.info("Attempting to send data to n8n webhook...")
+        enricher.send_to_n8n(enriched_results)
     else:
         logger.warning("No IOCs were enriched")
 
