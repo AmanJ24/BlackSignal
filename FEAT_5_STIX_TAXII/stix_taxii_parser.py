@@ -449,7 +449,7 @@ def main():
     
     # Send to n8n (commented out until webhook is ready)
     logger.info("Feature 5 is working correctly! Webhook can be set up later.")
-    # parser.send_to_n8n(processed_data)
+    parser.send_to_n8n(processed_data)
     
     logger.info("STIX/TAXII feed parsing completed successfully!")
 

@@ -156,7 +156,7 @@ class GeolocationCorrelator:
         else:
             response.raise_for_status()
 
-    def _get_mock_data(self, ip_address: str) -e Dict[str, Any]:
+    def _get_mock_data(self, ip_address: str) -> Dict[str, Any]:
         """Generate mock data for testing when APIs are not available"""
         mock_data = {
             "ip_address": ip_address,
@@ -199,7 +199,7 @@ class GeolocationCorrelator:
         mock_data["analysis"] = self._analyze_geolocation(mock_data)
         return mock_data
 
-    def _is_valid_ip(self, ip_address: str) -e bool:
+    def _is_valid_ip(self, ip_address: str) -> bool:
         """Validate IP address format"""
         try:
             socket.inet_aton(ip_address)
@@ -207,7 +207,7 @@ class GeolocationCorrelator:
         except socket.error:
             return False
 
-    def _analyze_geolocation(self, data: Dict[str, Any]) -e Dict[str, Any]:
+    def _analyze_geolocation(self, data: Dict[str, Any]) -> Dict[str, Any]:
         analysis = {
             "geolocation": {},
             "risk_factors": [],
@@ -230,3 +230,59 @@ class GeolocationCorrelator:
                 analysis["risk_factors"].append("Located in high-risk country")
 
         return analysis
+
+
+def send_to_webhook(data: List[Dict[str, Any]]):
+    """Sends the geolocation analysis results to the n8n webhook."""
+    # Use the URL from the class instance if available
+    # This handles the case where config might not be loaded
+    webhook_url = GeolocationCorrelator().webhook_url
+    if not webhook_url:
+        logger.warning("Webhook URL for 'geo-correlation' not configured. Skipping.")
+        return False
+    try:
+        payload = {
+            "timestamp": datetime.now().isoformat(),
+            "feature": "Geolocation Correlation",
+            "results_count": len(data),
+            "results": data
+        }
+        response = requests.post(webhook_url, json=payload, timeout=20)
+        response.raise_for_status()
+        logger.info(f"✅ Successfully sent {len(data)} geolocation reports to webhook.")
+        return True
+    except requests.exceptions.RequestException as e:
+        logger.error(f"❌ Failed to send data to webhook: {e}")
+        return False
+
+
+
+# Main Function
+if __name__ == "__main__":
+    sample_ips = ["8.8.8.8", "104.26.10.231", "195.154.225.107"] # Google, Cloudflare, Russia
+    
+    # Load API keys from config/environment
+    shodan_key = get_api_key("shodan") if CONFIG_AVAILABLE else None
+    
+    correlator = GeolocationCorrelator(shodan_api_key=shodan_key)
+    
+    all_results = []
+    print(f"🚀 Starting geolocation correlation for {len(sample_ips)} IPs...")
+    
+    for ip in sample_ips:
+        try:
+            print(f"\n--- Correlating IP: {ip} ---")
+            result = correlator.correlate_geolocation(ip)
+            all_results.append(result)
+            print(json.dumps(result, indent=2))
+            time.sleep(1) # Rate limit
+            
+        except GeolocationCorrelationError as e:
+            print(f"❗️ Could not correlate IP {ip}: {e}")
+
+    if all_results:
+        send_to_webhook(all_results)
+    else:
+        print("No results to send to webhook.")
+
+    print("\n✅ Geolocation correlation complete.")

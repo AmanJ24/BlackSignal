@@ -85,3 +85,74 @@ class HandleCorrelator:
         except Exception as e:
             logger.error(f"General error during correlation: {e}")
             raise HandleCorrelationError(f"General error during correlation: {e}")
+
+def send_to_webhook(data: Dict[str, Any]):
+    """Sends the handle correlation results to the n8n webhook."""
+    webhook_url = get_n8n_webhook_url('handle-correlation') if CONFIG_AVAILABLE else "https://sipiv63984.app.n8n.cloud/webhook-test/handle-correlation"
+    if not webhook_url:
+        logger.warning("Webhook URL for 'handle-correlation' not configured. Skipping.")
+        return False
+    try:
+        payload = {
+            "timestamp": datetime.now().isoformat(),
+            "feature": "Handle Correlation",
+            "source": data.get("source", "unknown"),
+            "correlation_results": data.get("results", [])
+        }
+        response = requests.post(webhook_url, json=payload, timeout=20)
+        response.raise_for_status()
+        logger.info(f"✅ Successfully sent {len(data.get('results', []))} handle correlations to webhook.")
+        return True
+    except requests.exceptions.RequestException as e:
+        logger.error(f"❌ Failed to send data to webhook: {e}")
+        return False
+
+
+# Main Function
+if __name__ == "__main__":
+    # In a real pipeline, this data would come from another feature (e.g., scraping)
+    sample_input_data = {
+        "source": "Dark Web Marketplace A",
+        "extracted_handles": [
+            {"handle": "Gnosticplayers"},
+            {"handle": "UnknownVendor123"},
+            {"handle": "ShinyHunters"},
+            {"handle": "NewUser2025"}
+        ]
+    }
+    
+    # For testing, ensure 'known_handles.json' exists.
+    # If not, create a dummy one.
+    if not os.path.exists('known_handles.json'):
+        logger.warning("known_handles.json not found. Creating a dummy file for testing.")
+        dummy_known_handles = {
+            "Gnosticplayers": { "risk": "High", "associated_group": "Data Breach Brokers" },
+            "ShinyHunters": { "risk": "High", "associated_group": "Data Breach Sellers" },
+            "LulzSec": { "risk": "Critical", "associated_group": "Hacktivist Group" }
+        }
+        with open('known_handles.json', 'w') as f:
+            json.dump(dummy_known_handles, f, indent=2)
+
+    
+    print("🚀 Handle Correlation Feature 11 - Starting...")
+    print("=" * 50)
+    
+    correlator = HandleCorrelator()
+    
+    try:
+        correlation_result = correlator.correlate(sample_input_data)
+        
+        print("📊 Correlation Results:")
+        for result in correlation_result.get("results", []):
+            status_icon = "✅" if result['status'] == 'known' else "❓"
+            print(f"  {status_icon} Handle: {result['handle']:<20} | Status: {result['status']}")
+            
+        # Send the final results to the webhook
+        if correlation_result.get("results"):
+            send_to_webhook(correlation_result)
+        
+    except HandleCorrelationError as e:
+        logger.error(f"An error occurred during handle correlation: {e}")
+
+    print("\n✅ Handle correlation process completed!")
+

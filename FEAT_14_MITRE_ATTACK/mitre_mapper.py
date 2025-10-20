@@ -8,6 +8,9 @@ import json
 import re
 import os
 from collections import defaultdict
+import requests  # Import the requests library for making HTTP requests
+
+N8N_WEBHOOK_URL = "https://sipiv63984.app.n8n.cloud/webhook-test/mitre-attack"
 
 class MitreAttackMapper:
     def __init__(self, dataset_file='mitre_attack_data.json'):
@@ -44,13 +47,34 @@ class MitreAttackMapper:
             return {'description': description, 'mappings': matches}
         else:
             return {'description': description, 'mappings': []}
+            
+    def send_to_webhook(self, data):
+        """Sends data to the configured n8n webhook."""
+        try:
+            response = requests.post(N8N_WEBHOOK_URL, json=data, timeout=10)
+            # The following line will raise an exception for 4xx/5xx errors
+            response.raise_for_status()  
+            print(f"Successfully sent data to n8n. Status: {response.status_code}")
+            return True
+        except requests.exceptions.RequestException as e:
+            print(f"Error sending data to n8n webhook: {e}")
+            return False
 
 
 if __name__ == '__main__':
     # Example usage
-    example_description = "Threat actor utilized spear-phishing and credential dumping."
+    example_description = "Threat actor utilized spear-phishing and credential dumping to gain initial access and escalate privileges."
     mapper = MitreAttackMapper()
     analysis = mapper.analyze(example_description)
 
-    print("Analysis Result:")
+    print("--- Analysis Result ---")
     print(json.dumps(analysis, indent=2))
+    print("\n-------------------------\n")
+
+    # --- START: Sending the result to the webhook ---
+    print("Attempting to send result to n8n webhook...")
+    if analysis.get('mappings'):  # Only send if there are actual matches
+        mapper.send_to_webhook(analysis)
+    else:
+        print("No MITRE ATT&CK mappings found, skipping webhook.")
+    # --- END: Sending the result to the webhook ---

@@ -274,17 +274,62 @@ class InfrastructureMapper:
         except Exception as e:
             raise InfrastructureMappingError(f"Error processing sample data: {e}")
 
-# Example usage
-if __name__ == "__main__":
-    # Placeholders for API keys
-    shodan_api_key = "your_shodan_api_key"
-    abuseipdb_api_key = "your_abuseipdb_api_key"
-
-    mapper = InfrastructureMapper(shodan_api_key, abuseipdb_api_key)
-
-    # Sample IP address
+def send_to_webhook(data: List[Dict[str, Any]]):
+    """Sends the infrastructure analysis results to the n8n webhook."""
+    webhook_url = get_n8n_webhook_url("infra-mapping") # Assuming you have this in config
+    if not webhook_url:
+        print("Webhook URL for 'infra-mapping' not configured. Skipping.")
+        return False
     try:
-        result = mapper.map_infrastructure("8.8.8.8")
-        print(result)
-    except InfrastructureMappingError as ex:
-        print(ex)
+        payload = {
+            "timestamp": datetime.now().isoformat(),
+            "feature": "Infrastructure Mapping",
+            "results_count": len(data),
+            "results": data
+        }
+        response = requests.post(webhook_url, json=payload, timeout=20)
+        response.raise_for_status()
+        print(f"✅ Successfully sent {len(data)} infrastructure reports to webhook.")
+        return True
+    except requests.exceptions.RequestException as e:
+        print(f"❌ Failed to send data to webhook: {e}")
+        return False
+
+
+
+# Main Function
+if __name__ == "__main__":
+    # --- This part would be dynamically loaded in a real pipeline ---
+    # For testing, we use a sample list of IPs.
+    sample_ips = ["8.8.8.8", "1.1.1.1", "91.198.174.192"] # Google, Cloudflare, Wikipedia
+
+    # Load API keys from config/environment
+    shodan_key = get_api_key("shodan")
+    abuseipdb_key = get_api_key("abuseipdb")
+    
+    # Initialize the mapper. It will automatically use mock data if keys are missing.
+    mapper = InfrastructureMapper(shodan_api_key=shodan_key, abuseipdb_api_key=abuseipdb_key)
+    
+    all_results = []
+    print(f"🚀 Starting infrastructure mapping for {len(sample_ips)} IPs...")
+    
+    for ip in sample_ips:
+        try:
+            print(f"\n--- Mapping IP: {ip} ---")
+            result = mapper.map_infrastructure(ip)
+            all_results.append(result)
+            print(json.dumps(result, indent=2))
+            
+            # Respect rate limits, even in testing
+            time.sleep(1) 
+            
+        except InfrastructureMappingError as e:
+            print(f"❗️ Could not map IP {ip}: {e}")
+
+    # Send the collected results to the webhook
+    if all_results:
+        send_to_webhook(all_results)
+    else:
+        print("No results to send to webhook.")
+
+    print("\n✅ Infrastructure mapping complete.")
