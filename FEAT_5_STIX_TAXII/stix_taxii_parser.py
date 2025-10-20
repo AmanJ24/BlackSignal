@@ -27,7 +27,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('stix_taxii_parser.log'),
+        logging.FileHandler('../logs/stix_taxii_parser.log'),
         logging.StreamHandler()
     ]
 )

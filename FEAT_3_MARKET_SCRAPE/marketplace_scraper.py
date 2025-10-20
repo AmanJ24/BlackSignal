@@ -20,7 +20,7 @@ logging.basicConfig(
     level=logging.DEBUG,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('marketplace_scraper.log'),
+        logging.FileHandler('../logs/marketplace_scraper.log'),
         logging.StreamHandler()
     ]
 )

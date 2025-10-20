@@ -32,7 +32,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('onion_discovery_final.log'),
+        logging.FileHandler('../logs/onion_discovery_final.log'),
         logging.StreamHandler()
     ]
 )
@@ -441,7 +441,6 @@ class OnionDomainDiscoveryFinal:
 def main():
     """Main execution function"""
     
-    # Configuration updated from instructions.txt
     SEED_URLS = [
         "http://darkfailllnkf4vf.onion",
         "http://hss3uro2hsxfogfq.onion",

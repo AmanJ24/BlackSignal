@@ -1,9 +1,0 @@
-{
-    "source": "IOS_Extraction",
-    "extracted_iocs": [
-        {
-            "ip": "8.8.8.8",
-            "details": "Sample data for IP"
-        }
-    ]
-}

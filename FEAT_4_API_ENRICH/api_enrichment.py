@@ -24,7 +24,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('api_enrichment.log'),
+        logging.FileHandler('../logs/api_enrichment.log'),
         logging.StreamHandler()
     ]
 )
