@@ -329,6 +329,17 @@ if __name__ == "__main__":
     # Send the collected results to the webhook
     if all_results:
         send_to_webhook(all_results)
+
+        try:
+            output_dir = os.path.join(os.path.dirname(__file__), '..', 'output')
+            os.makedirs(output_dir, exist_ok=True)
+            output_file = os.path.join(output_dir, 'infrastructure_mapping_results.json')
+            with open(output_file, 'w') as f:
+                json.dump(all_results, f, indent=2)
+            print(f"💾 Results also saved locally to {output_file}")
+        except Exception as e:
+            print(f"Could not save results locally: {e}")
+
     else:
         print("No results to send to webhook.")
 

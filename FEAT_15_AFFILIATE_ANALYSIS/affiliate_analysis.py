@@ -391,12 +391,14 @@ def main():
             print("\n" + "=" * 60)
             webhook_success = analyzer.send_webhook(analysis_result)
             
-            # Save results locally
-            output_file = 'affiliate_analysis_results.json'
+            # Go up one directory from the current script, then into the 'output' folder
+            output_dir = os.path.join(os.path.dirname(__file__), '..', 'output')
+            os.makedirs(output_dir, exist_ok=True) # Create the directory if it doesn't exist
+            output_file = os.path.join(output_dir, 'affiliate_analysis_results.json')
+
             with open(output_file, 'w') as f:
                 json.dump(analysis_result, f, indent=2)
-            print(f"💾 Results saved to: {output_file}")
-            
+
         else:
             print("❌ Analysis failed - no results generated")
             
