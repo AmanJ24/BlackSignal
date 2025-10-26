@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """
-API Enrichment Feature 4
-Enriches IOCs using free threat intelligence APIs
+Feature 4: API Enrichment (Local Version)
+Enriches various Indicators of Compromise (IOCs) using free-tier threat 
+intelligence APIs and saves the results to a local JSON file.
 """
 
 import sys
+import os
 import requests
 import json
 import logging
@@ -12,390 +14,207 @@ import time
 import re
 from datetime import datetime
 from typing import Dict, List, Optional
-import hashlib
-import os
 
 # Add parent directory to path to import config
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from config import get_n8n_webhook_url, get_api_key
+try:
+    from config import get_api_key
+except ImportError:
+    # Fallback if config.py is not found
+    def get_api_key(key_name):
+        return os.environ.get(key_name.upper() + "_API_KEY")
 
 # Configure logging
+log_dir = os.path.join(os.path.dirname(__file__), '..', 'logs')
+os.makedirs(log_dir, exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('../logs/api_enrichment.log'),
+        logging.FileHandler(os.path.join(log_dir, 'api_enrichment.log')),
         logging.StreamHandler()
     ]
 )
 logger = logging.getLogger(__name__)
 
-# Configuration
-N8N_WEBHOOK_URL = get_n8n_webhook_url('api-enrich')
-
-# Free API endpoints
+# --- Configuration ---
 API_ENDPOINTS = {
     'ip_api': 'http://ip-api.com/json/',
     'bgpview_ip': 'https://api.bgpview.io/ip/',
-    'bgpview_asn': 'https://api.bgpview.io/asn/',
     'abuseipdb': 'https://api.abuseipdb.com/api/v2/check',
-    'virustotal': 'https://www.virustotal.com/vtapi/v2/file/report',
-    'shodan': 'https://api.shodan.io/shodan/host/',
+    'virustotal_v2': 'https://www.virustotal.com/vtapi/v2/file/report', # Kept for compatibility
     'otx_ip': 'https://otx.alienvault.com/api/v1/indicators/IPv4/',
     'otx_domain': 'https://otx.alienvault.com/api/v1/indicators/domain/',
     'otx_hash': 'https://otx.alienvault.com/api/v1/indicators/file/',
 }
 
-# Rate limiting delays (seconds)
 RATE_LIMITS = {
-    'ip_api': 1,
-    'bgpview': 1,
-    'abuseipdb': 1,
-    'virustotal': 15,  # VT has strict rate limits
-    'shodan': 1,
-    'otx': 1
+    'ip_api': 1.5,
+    'bgpview': 1.5,
+    'abuseipdb': 2,
+    'virustotal': 16,  # 4 requests/min = 15s, add a buffer
+    'otx': 1.5
 }
 
 class APIEnricher:
-    """Main class for API enrichment"""
+    """Enriches IOCs by querying various threat intelligence APIs."""
     
-    def __init__(self, api_keys: Dict[str, str] = None):
-        """Initialize with optional API keys"""
+    def __init__(self, api_keys: Optional[Dict[str, str]] = None):
         self.api_keys = api_keys or {}
         self.session = requests.Session()
-        self.session.headers.update({
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-        })
-        
-    def validate_ioc(self, ioc: str, ioc_type: str) -> bool:
-        """Validate IOC format"""
-        patterns = {
-            'ip': r'^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$',
-            'domain': r'^[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]*\.([a-zA-Z]{2,}|onion)$',
-            'hash_md5': r'^[a-fA-F0-9]{32}$',
-            'hash_sha256': r'^[a-fA-F0-9]{64}$',
-            'btc': r'^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$|^bc1[a-z0-9]{39,59}$',
-            'email': r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-        }
-        
-        pattern = patterns.get(ioc_type)
-        if pattern:
-            return bool(re.match(pattern, ioc))
-        return False
+        self.session.headers.update({'User-Agent': 'OSINT-Pipeline-Enricher/1.0'})
         
     def enrich_ip(self, ip: str) -> Dict:
-        """Enrich IP address using multiple APIs"""
-        results = {'ip': ip, 'enrichment_timestamp': datetime.now().isoformat()}
+        """Enriches an IP address using multiple free-tier APIs."""
+        results = {'ioc': ip, 'ioc_type': 'ip', 'enrichment_timestamp': datetime.now().isoformat()}
         
-        # IP-API (free geolocation)
+        # --- IP-API (Geolocation) ---
         try:
-            response = self.session.get(f"{API_ENDPOINTS['ip_api']}{ip}", timeout=10)
-            if response.status_code == 200:
-                data = response.json()
-                if data.get('status') == 'success':
-                    results['geolocation'] = {
-                        'country': data.get('country'),
-                        'region': data.get('regionName'),
-                        'city': data.get('city'),
-                        'isp': data.get('isp'),
-                        'org': data.get('org'),
-                        'timezone': data.get('timezone'),
-                        'lat': data.get('lat'),
-                        'lon': data.get('lon')
-                    }
             time.sleep(RATE_LIMITS['ip_api'])
-        except Exception as e:
-            logger.error(f"IP-API error for {ip}: {e}")
-            
-        # BGPView (free ASN/network info)
-        try:
-            response = self.session.get(f"{API_ENDPOINTS['bgpview_ip']}{ip}", timeout=10)
-            if response.status_code == 200:
+            response = self.session.get(f"{API_ENDPOINTS['ip_api']}{ip}", timeout=10)
+            if response.ok and response.json().get('status') == 'success':
                 data = response.json()
-                if data.get('status') == 'ok':
-                    bgp_data = data.get('data', {})
-                    results['network'] = {
-                        'asn': bgp_data.get('asn'),
-                        'name': bgp_data.get('name'),
-                        'description': bgp_data.get('description_short'),
-                        'country': bgp_data.get('country_code'),
-                        'prefixes': bgp_data.get('prefixes', [])[:5]  # Limit to 5
-                    }
+                results['ip_api'] = {k: data.get(k) for k in ['country', 'regionName', 'city', 'isp', 'org']}
+        except requests.RequestException as e:
+            logger.error(f"IP-API query failed for {ip}: {e}")
+
+        # --- BGPView (Network Info) ---
+        try:
             time.sleep(RATE_LIMITS['bgpview'])
-        except Exception as e:
-            logger.error(f"BGPView error for {ip}: {e}")
-            
-        # AbuseIPDB (requires free API key)
+            response = self.session.get(f"{API_ENDPOINTS['bgpview_ip']}{ip}", timeout=10)
+            if response.ok and response.json().get('status') == 'ok':
+                data = response.json().get('data', {})
+                results['bgpview'] = {'asn': data.get('asn'), 'description': data.get('description_short')}
+        except requests.RequestException as e:
+            logger.error(f"BGPView query failed for {ip}: {e}")
+
+        # --- AbuseIPDB (Abuse Score) ---
         if 'abuseipdb' in self.api_keys:
             try:
-                headers = {'Key': self.api_keys['abuseipdb']}
-                params = {'ipAddress': ip, 'maxAgeInDays': 90, 'verbose': ''}
-                response = self.session.get(API_ENDPOINTS['abuseipdb'], 
-                                          headers=headers, params=params, timeout=10)
-                if response.status_code == 200:
-                    data = response.json()
-                    if 'data' in data: # Check if 'data' key exists
-                        abuse_data = data.get('data', {})
-                        results['abuse'] = {
-                            'confidence': abuse_data.get('abuseConfidenceScore'), # Correct key
-                            'is_whitelisted': abuse_data.get('isWhitelisted'),
-                            'country_code': abuse_data.get('countryCode'),
-                            'usage_type': abuse_data.get('usageType'),
-                            'total_reports': abuse_data.get('totalReports')
-                        }
                 time.sleep(RATE_LIMITS['abuseipdb'])
-            except Exception as e:
-                logger.error(f"AbuseIPDB error for {ip}: {e}")
-                
-        # OTX (free threat intelligence)
-        try:
-            response = self.session.get(f"{API_ENDPOINTS['otx_ip']}{ip}/general", timeout=10)
-            if response.status_code == 200:
-                data = response.json()
-                results['otx'] = {
-                    'pulse_count': len(data.get('pulse_info', {}).get('pulses', [])),
-                    'base_indicator': data.get('base_indicator', {}),
-                    'reputation': data.get('reputation', 0)
-                }
-            time.sleep(RATE_LIMITS['otx'])
-        except Exception as e:
-            logger.error(f"OTX error for {ip}: {e}")
-            
+                headers = {'Key': self.api_keys['abuseipdb'], 'Accept': 'application/json'}
+                params = {'ipAddress': ip, 'maxAgeInDays': '90'}
+                response = self.session.get(API_ENDPOINTS['abuseipdb'], headers=headers, params=params, timeout=10)
+                if response.ok and 'data' in response.json():
+                    data = response.json()['data']
+                    results['abuseipdb'] = {'abuse_score': data.get('abuseConfidenceScore'), 'usage_type': data.get('usageType')}
+            except requests.RequestException as e:
+                logger.error(f"AbuseIPDB query failed for {ip}: {e}")
+        
         return results
         
     def enrich_domain(self, domain: str) -> Dict:
-        """Enrich domain using multiple APIs"""
-        results = {'domain': domain, 'enrichment_timestamp': datetime.now().isoformat()}
+        """Enriches a domain using OTX."""
+        results = {'ioc': domain, 'ioc_type': 'domain', 'enrichment_timestamp': datetime.now().isoformat()}
         
-        # OTX domain intelligence
+        # --- OTX (AlienVault) ---
         try:
-            response = self.session.get(f"{API_ENDPOINTS['otx_domain']}{domain}/general", timeout=10)
-            if response.status_code == 200:
-                data = response.json()
-                results['otx'] = {
-                    'pulse_count': len(data.get('pulse_info', {}).get('pulses', [])),
-                    'base_indicator': data.get('base_indicator', {}),
-                    'reputation': data.get('reputation', 0)
-                }
             time.sleep(RATE_LIMITS['otx'])
-        except Exception as e:
-            logger.error(f"OTX domain error for {domain}: {e}")
-            
-        # Basic domain analysis
-        results['analysis'] = {
-            'is_onion': domain.endswith('.onion'),
-            'length': len(domain),
-            'subdomain_count': domain.count('.') - 1,
-            'suspicious_tld': domain.split('.')[-1] in ['tk', 'ml', 'ga', 'cf']
-        }
+            response = self.session.get(f"{API_ENDPOINTS['otx_domain']}{domain}/general", timeout=10)
+            if response.ok:
+                data = response.json()
+                results['otx'] = {'pulse_count': len(data.get('pulse_info', {}).get('pulses', []))}
+        except requests.RequestException as e:
+            logger.error(f"OTX query failed for domain {domain}: {e}")
         
         return results
         
     def enrich_hash(self, hash_value: str) -> Dict:
-        """Enrich file hash using multiple APIs"""
-        results = {'hash': hash_value, 'enrichment_timestamp': datetime.now().isoformat()}
+        """Enriches a file hash using VirusTotal and OTX."""
+        results = {'ioc': hash_value, 'ioc_type': 'hash', 'enrichment_timestamp': datetime.now().isoformat()}
         
-        # Determine hash type
-        if len(hash_value) == 32:
-            results['hash_type'] = 'md5'
-        elif len(hash_value) == 64:
-            results['hash_type'] = 'sha256'
-        else:
-            results['hash_type'] = 'unknown'
-            
-        # VirusTotal (requires free API key)
+        # --- VirusTotal ---
         if 'virustotal' in self.api_keys:
             try:
-                params = {'apikey': self.api_keys['virustotal'], 'resource': hash_value}
-                response = self.session.get(API_ENDPOINTS['virustotal'], params=params, timeout=15)
-                if response.status_code == 200:
-                    data = response.json()
-                    results['virustotal'] = {
-                        'response_code': data.get('response_code'),
-                        'positives': data.get('positives', 0),
-                        'total': data.get('total', 0),
-                        'scan_date': data.get('scan_date'),
-                        'permalink': data.get('permalink')
-                    }
                 time.sleep(RATE_LIMITS['virustotal'])
-            except Exception as e:
-                logger.error(f"VirusTotal error for {hash_value}: {e}")
-                
-        # OTX hash intelligence
+                params = {'apikey': self.api_keys['virustotal'], 'resource': hash_value}
+                response = self.session.get(API_ENDPOINTS['virustotal_v2'], params=params, timeout=15)
+                if response.ok and response.json().get('response_code') == 1:
+                    data = response.json()
+                    results['virustotal'] = {'positives': data.get('positives', 0), 'total': data.get('total', 0)}
+            except requests.RequestException as e:
+                logger.error(f"VirusTotal query failed for hash {hash_value}: {e}")
+
+        # --- OTX (AlienVault) ---
         try:
-            response = self.session.get(f"{API_ENDPOINTS['otx_hash']}{hash_value}/general", timeout=10)
-            if response.status_code == 200:
-                data = response.json()
-                results['otx'] = {
-                    'pulse_count': len(data.get('pulse_info', {}).get('pulses', [])),
-                    'base_indicator': data.get('base_indicator', {}),
-                    'reputation': data.get('reputation', 0)
-                }
             time.sleep(RATE_LIMITS['otx'])
-        except Exception as e:
-            logger.error(f"OTX hash error for {hash_value}: {e}")
+            response = self.session.get(f"{API_ENDPOINTS['otx_hash']}{hash_value}/general", timeout=10)
+            if response.ok:
+                data = response.json()
+                results['otx'] = {'pulse_count': len(data.get('pulse_info', {}).get('pulses', []))}
+        except requests.RequestException as e:
+            logger.error(f"OTX query failed for hash {hash_value}: {e}")
             
-        return results
-        
-    def enrich_btc_address(self, btc_address: str) -> Dict:
-        """Enrich Bitcoin address (basic analysis)"""
-        results = {'btc_address': btc_address, 'enrichment_timestamp': datetime.now().isoformat()}
-        
-        # Basic BTC address analysis
-        results['analysis'] = {
-            'address_type': 'legacy' if btc_address.startswith('1') else 
-                           'script' if btc_address.startswith('3') else 
-                           'bech32' if btc_address.startswith('bc1') else 'unknown',
-            'length': len(btc_address),
-            'first_seen': datetime.now().isoformat()  # Would need blockchain API for real data
-        }
-        
-        return results
-        
-    def enrich_email(self, email: str) -> Dict:
-        """Enrich email address (basic analysis)"""
-        results = {'email': email, 'enrichment_timestamp': datetime.now().isoformat()}
-        
-        domain = email.split('@')[-1] if '@' in email else ''
-        results['analysis'] = {
-            'domain': domain,
-            'is_disposable': domain in ['temp-mail.org', '10minutemail.com', 'guerrillamail.com'],
-            'suspicious_domain': domain.endswith('.onion') or domain in ['protonmail.com', 'tutanota.com']
-        }
-        
         return results
 
-    def send_to_n8n(self, enriched_data: List[Dict]) -> bool:
-        """Send enriched data to n8n webhook"""
-        try:
-            payload = {
-                'enriched_data': enriched_data,
-                'metadata': {
-                    'total_items': len(enriched_data),
-                    'enrichment_timestamp': datetime.now().isoformat(),
-                    'enricher_version': '1.0'
-                }
-            }
-            
-            response = self.session.post(
-                N8N_WEBHOOK_URL,
-                json=payload,
-                headers={'Content-Type': 'application/json'},
-                timeout=30
-            )
-            
-            response.raise_for_status()
-            logger.info(f"Successfully sent {len(enriched_data)} enriched items to n8n")
-            return True
-            
-        except Exception as e:
-            logger.error(f"Failed to send data to n8n: {e}")
-            return False
+def save_results(data: List[Dict]):
+    """Saves the enriched data to a JSON file in the 'output' directory."""
+    if not data:
+        logger.warning("No enriched data to save.")
+        return
+        
+    try:
+        output_dir = os.path.join(os.path.dirname(__file__), '..', 'output')
+        os.makedirs(output_dir, exist_ok=True)
+        output_file = os.path.join(output_dir, 'feature_4_api_enrichment.json')
+        
+        final_payload = {
+            "feature_name": "API Enrichment",
+            "execution_timestamp": datetime.now().isoformat(),
+            "iocs_enriched": len(data),
+            "enriched_results": data
+        }
 
-def extract_iocs_from_text(text: str) -> Dict[str, List[str]]:
-    """Extract IOCs from raw text"""
-    iocs = {
-        'ips': [],
-        'domains': [],
-        'hashes': [],
-        'btc_addresses': [],
-        'emails': []
-    }
-    
-    # IP addresses
-    ip_pattern = r'\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b'
-    iocs['ips'] = list(set(re.findall(ip_pattern, text)))
-    
-    # Domains (including .onion)
-    domain_pattern = r'\b[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]*\.(?:[a-zA-Z]{2,}|onion)\b'
-    iocs['domains'] = list(set(re.findall(domain_pattern, text)))
-    
-    # Hashes (MD5 and SHA256)
-    hash_pattern = r'\b[a-fA-F0-9]{32}\b|\b[a-fA-F0-9]{64}\b'
-    iocs['hashes'] = list(set(re.findall(hash_pattern, text)))
-    
-    # Bitcoin addresses
-    btc_pattern = r'\b[13][a-km-zA-HJ-NP-Z1-9]{25,34}\b|\bbc1[a-z0-9]{39,59}\b'
-    iocs['btc_addresses'] = list(set(re.findall(btc_pattern, text)))
-    
-    # Email addresses
-    email_pattern = r'\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b'
-    iocs['emails'] = list(set(re.findall(email_pattern, text)))
-    
-    return iocs
+        with open(output_file, 'w', encoding='utf-8') as f:
+            json.dump(final_payload, f, indent=4, ensure_ascii=False)
+            
+        logger.info(f"💾 Results successfully saved to: {output_file}")
+    except Exception as e:
+        logger.error(f"❌ ERROR: Failed to save results to file: {e}")
 
 def main():
-    """Main execution function"""
-    logger.info("Starting API enrichment process...")
+    """Main execution function for API enrichment."""
+    logger.info("🚀 Starting Feature 4: API Enrichment...")
     
-    # Sample IOCs for testing
+    # In a real pipeline, these IOCs would come from a previous step's output file.
+    # For this standalone script, we define a sample set.
     test_iocs = {
-        'ips': ['8.8.8.8', '1.1.1.1'],
-        'domains': ['google.com', 'facebook.com'],
-        'hashes': ['d41d8cd98f00b204e9800998ecf8427e'],  # MD5 of empty string
-        'btc_addresses': ['1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa'],
-        'emails': ['test@example.com']
+        'ips': ['8.8.8.8', '1.1.1.1', '185.220.101.43'], # Google, Cloudflare, known malicious
+        'domains': ['google.com', 'evil-site.net'],
+        'hashes': ['275a021bbfb6489e54d471899f7db9d1663fc695ec2fe2a2c4538aabf651fd0f'] # WannaCry hash
     }
     
-    # Initialize enricher (load API keys from environment)
+    # Load API keys from config or environment variables
     api_keys = {
         'abuseipdb': get_api_key('abuseipdb'),
         'virustotal': get_api_key('virustotal'),
-        'shodan': get_api_key('shodan')
     }
-    # Remove empty keys
     api_keys = {k: v for k, v in api_keys.items() if v}
     
     enricher = APIEnricher(api_keys)
-    enriched_results = []
+    all_enriched_results = []
     
-    # Enrich IPs
+    logger.info("--- Enriching IP Addresses ---")
     for ip in test_iocs['ips']:
-        if enricher.validate_ioc(ip, 'ip'):
-            logger.info(f"Enriching IP: {ip}")
-            result = enricher.enrich_ip(ip)
-            enriched_results.append(result)
+        logger.info(f"Enriching IP: {ip}")
+        all_enriched_results.append(enricher.enrich_ip(ip))
     
-    # Enrich domains
+    logger.info("--- Enriching Domains ---")
     for domain in test_iocs['domains']:
-        if enricher.validate_ioc(domain, 'domain'):
-            logger.info(f"Enriching domain: {domain}")
-            result = enricher.enrich_domain(domain)
-            enriched_results.append(result)
+        logger.info(f"Enriching domain: {domain}")
+        all_enriched_results.append(enricher.enrich_domain(domain))
     
-    # Enrich hashes
+    logger.info("--- Enriching Hashes ---")
     for hash_val in test_iocs['hashes']:
-        if enricher.validate_ioc(hash_val, 'hash_md5') or enricher.validate_ioc(hash_val, 'hash_sha256'):
-            logger.info(f"Enriching hash: {hash_val}")
-            result = enricher.enrich_hash(hash_val)
-            enriched_results.append(result)
+        logger.info(f"Enriching hash: {hash_val}")
+        all_enriched_results.append(enricher.enrich_hash(hash_val))
     
-    # Enrich BTC addresses
-    for btc in test_iocs['btc_addresses']:
-        if enricher.validate_ioc(btc, 'btc'):
-            logger.info(f"Enriching BTC address: {btc}")
-            result = enricher.enrich_btc_address(btc)
-            enriched_results.append(result)
-    
-    # Enrich emails
-    for email in test_iocs['emails']:
-        if enricher.validate_ioc(email, 'email'):
-            logger.info(f"Enriching email: {email}")
-            result = enricher.enrich_email(email)
-            enriched_results.append(result)
-    
-    logger.info(f"Enriched {len(enriched_results)} IOCs")
-    
-    # Print results for verification and send to webhook
-    if enriched_results:
-        logger.info("=== ENRICHMENT RESULTS ===")
-        # Pretty print for console verification
-        print(json.dumps(enriched_results, indent=2))
-        
-        logger.info("Attempting to send data to n8n webhook...")
-        enricher.send_to_n8n(enriched_results)
+    if all_enriched_results:
+        save_results(all_enriched_results)
     else:
-        logger.warning("No IOCs were enriched")
+        logger.warning("No IOCs were enriched.")
+        
+    logger.info("✅ API Enrichment finished successfully.")
 
 if __name__ == "__main__":
     main()

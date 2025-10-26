@@ -1,0 +1,23 @@
+2025-10-26 20:25:26,084 - INFO - Connecting to Tor controller on port 9051...
+2025-10-26 20:25:26,090 - DEBUG - GETCONF __owningcontrollerprocess (runtime: 0.0002)
+2025-10-26 20:25:26,090 - INFO - ✅ Tor controller connection successful!
+2025-10-26 20:25:26,090 - INFO - Error while receiving a control message (SocketClosed): received exception "read of closed file"
+2025-10-26 20:25:26,090 - INFO - 🌱 Starting onion domain discovery with 2 seed URLs.
+2025-10-26 20:25:26,090 - INFO - 🌱 Processing seed 1/2: http://darkfailllnkf4vf.onion
+2025-10-26 20:25:26,090 - INFO - 🌐 Crawling (depth 1): http://darkfailllnkf4vf.onion
+2025-10-26 20:25:26,098 - WARNING - Curl failed for http://darkfailllnkf4vf.onion: 
+2025-10-26 20:25:26,098 - INFO - 🌱 Processing seed 2/2: http://ahmiafiaduknq7cz.onion
+2025-10-26 20:25:26,099 - INFO - 🌐 Crawling (depth 1): http://ahmiafiaduknq7cz.onion
+2025-10-26 20:25:26,107 - WARNING - Curl failed for http://ahmiafiaduknq7cz.onion: 
+2025-10-26 20:25:26,107 - INFO - 🎉 Discovery completed in 0.02 seconds.
+2025-10-26 20:25:26,108 - ERROR - An unexpected error occurred: name 'datetime' is not defined
+2025-10-26 20:30:21,586 - INFO - Connecting to Tor controller on port 9051...
+2025-10-26 20:30:21,593 - DEBUG - GETCONF __owningcontrollerprocess (runtime: 0.0002)
+2025-10-26 20:30:21,593 - INFO - ✅ Tor controller connection successful!
+2025-10-26 20:30:21,593 - INFO - Error while receiving a control message (SocketClosed): received exception "read of closed file"
+2025-10-26 20:30:21,593 - INFO - 🌱 Starting onion domain discovery with 2 seed URLs.
+2025-10-26 20:30:21,593 - WARNING - ⚠️ Invalid seed URL, skipping: http://juhanurmihxlp77nkq76byazjpd1hxanp6d6f8dir5vdpvvf7dgd.onion
+2025-10-26 20:30:21,593 - WARNING - ⚠️ Invalid seed URL, skipping: http://tor66sewebgix6kfqc72knfxmb5cr25wn4xt4vj3u2r636s4k2xdrd2qd.onion
+2025-10-26 20:30:21,593 - INFO - 🎉 Discovery completed in 0.00 seconds.
+2025-10-26 20:30:21,594 - WARNING - No domains discovered, nothing to save.
+2025-10-26 20:30:21,594 - INFO - ✅ Onion domain discovery finished successfully.

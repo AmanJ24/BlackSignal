@@ -1,391 +1,194 @@
 #!/usr/bin/env python3
 """
-FEATURE 12: BEHAVIORAL ANALYSIS
-Analyzes vendor behavior patterns from marketplace data including:
-- Posting frequency and patterns
-- Sentiment analysis of posts
-- Price evolution tracking
-- Risk scoring based on behavior
-- Writing style analysis
+FEATURE 12: BEHAVIORAL ANALYSIS (Local Version)
+
+Analyzes vendor behavior patterns from marketplace data, including posting frequency,
+sentiment, risk keywords, and price evolution. Saves a detailed report locally.
 """
 
 import json
 import re
-import requests
-from datetime import datetime, timedelta
+from datetime import datetime
 from collections import Counter, defaultdict
 from textblob import TextBlob
 import os
 import sys
+import logging
 
-# Add parent directory to path for config import
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from config import get_n8n_webhook_url
+# Configure logging
+log_dir = os.path.join(os.path.dirname(__file__), '..', 'logs')
+os.makedirs(log_dir, exist_ok=True)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler(os.path.join(log_dir, 'behavioral_analysis.log')),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 
 class BehavioralAnalyzer:
     def __init__(self):
         self.risk_keywords = {
-            'high_risk': ['ransomware', 'exploit', '0day', 'government', 'military', 'hack', 'breach'],
-            'medium_risk': ['cvv', 'dumps', 'carding', 'fraud', 'stolen', 'cracked'],
-            'recruitment': ['affiliate', 'partner', 'recruit', 'join', 'team', 'RaaS'],
-            'trust_building': ['trust', 'reliable', 'reputation', 'feedback', 'escrow', 'guarantee']
+            'high_risk': ['ransomware', 'exploit', '0day', 'botnet', 'c2', 'breach'],
+            'medium_risk': ['cvv', 'carding', 'fraud', 'stolen', 'cracked', 'dumps'],
+            'recruitment': ['affiliate', 'partner', 'recruit', 'join us', 'team', 'raas'],
+            'trust_building': ['trust', 'reliable', 'reputation', 'feedback', 'escrow']
         }
+
+    def _analyze_posting_patterns(self, vendor_posts):
+        """Analyzes posting frequency, timing, and marketplace spread."""
+        posts = sorted([datetime.fromisoformat(p['timestamp'].replace('Z', '')) for p in vendor_posts])
+        time_diffs_hours = [(posts[i] - posts[i-1]).total_seconds() / 3600 for i in range(1, len(posts))]
         
-    def load_data(self, file_path):
-        """Load mock data from JSON file"""
-        try:
-            with open(file_path, 'r') as file:
-                return json.load(file)
-        except Exception as e:
-            print(f"Error loading data: {e}")
-            return None
-    
-    def analyze_posting_patterns(self, marketplace_data):
-        """Analyze posting frequency and timing patterns"""
-        patterns = {}
-        
-        for entry in marketplace_data:
-            vendor = entry['vendor_handle']
-            timestamp = datetime.fromisoformat(entry['timestamp'].replace('Z', ''))
-            
-            if vendor not in patterns:
-                patterns[vendor] = {
-                    'posts': [],
-                    'marketplaces': set(),
-                    'total_posts': 0,
-                    'avg_time_between_posts': 0,
-                    'active_hours': [],
-                    'active_days': []
-                }
-            
-            patterns[vendor]['posts'].append(timestamp)
-            patterns[vendor]['marketplaces'].add(entry['marketplace'])
-            patterns[vendor]['total_posts'] += 1
-            patterns[vendor]['active_hours'].append(timestamp.hour)
-            patterns[vendor]['active_days'].append(timestamp.weekday())
-        
-        # Calculate average time between posts
-        for vendor, data in patterns.items():
-            if len(data['posts']) > 1:
-                data['posts'].sort()
-                time_diffs = []
-                for i in range(1, len(data['posts'])):
-                    diff = (data['posts'][i] - data['posts'][i-1]).total_seconds() / 3600  # hours
-                    time_diffs.append(diff)
-                data['avg_time_between_posts'] = sum(time_diffs) / len(time_diffs) if time_diffs else 0
-            
-            # Convert datetime objects to ISO strings for JSON serialization
-            data['posts'] = [post.isoformat() for post in data['posts']]
-            data['marketplaces'] = list(data['marketplaces'])
-            data['most_active_hour'] = Counter(data['active_hours']).most_common(1)[0][0] if data['active_hours'] else None
-            data['most_active_day'] = Counter(data['active_days']).most_common(1)[0][0] if data['active_days'] else None
-        
-        return patterns
-    
-    def analyze_sentiment(self, marketplace_data):
-        """Analyze sentiment of vendor posts"""
-        sentiment_analysis = {}
-        
-        for entry in marketplace_data:
-            vendor = entry['vendor_handle']
-            content = entry['post_content']
-            
-            if vendor not in sentiment_analysis:
-                sentiment_analysis[vendor] = {
-                    'sentiments': [],
-                    'avg_polarity': 0,
-                    'avg_subjectivity': 0,
-                    'confidence_indicators': 0,
-                    'urgency_indicators': 0
-                }
-            
-            # TextBlob sentiment analysis
-            blob = TextBlob(content)
-            sentiment_analysis[vendor]['sentiments'].append({
-                'polarity': blob.sentiment.polarity,
-                'subjectivity': blob.sentiment.subjectivity
-            })
-            
-            # Count confidence and urgency indicators
-            confidence_words = ['trust', 'reliable', 'guarantee', 'years', 'experience', 'reputation']
-            urgency_words = ['limited', 'fast', 'quick', 'urgent', 'now', 'today', 'fresh']
-            
-            content_lower = content.lower()
-            sentiment_analysis[vendor]['confidence_indicators'] += sum(1 for word in confidence_words if word in content_lower)
-            sentiment_analysis[vendor]['urgency_indicators'] += sum(1 for word in urgency_words if word in content_lower)
-        
-        # Calculate averages
-        for vendor, data in sentiment_analysis.items():
-            if data['sentiments']:
-                data['avg_polarity'] = sum(s['polarity'] for s in data['sentiments']) / len(data['sentiments'])
-                data['avg_subjectivity'] = sum(s['subjectivity'] for s in data['sentiments']) / len(data['sentiments'])
-        
-        return sentiment_analysis
-    
-    def analyze_risk_profile(self, marketplace_data):
-        """Calculate risk scores based on content and behavior"""
-        risk_profiles = {}
-        
-        for entry in marketplace_data:
-            vendor = entry['vendor_handle']
-            content = entry['post_content'].lower()
-            
-            if vendor not in risk_profiles:
-                risk_profiles[vendor] = {
-                    'risk_score': 0,
-                    'risk_factors': [],
-                    'category_scores': {
-                        'high_risk': 0,
-                        'medium_risk': 0,
-                        'recruitment': 0,
-                        'trust_building': 0
-                    }
-                }
-            
-            # Check for risk keywords
-            for category, keywords in self.risk_keywords.items():
-                matches = sum(1 for keyword in keywords if keyword in content)
-                risk_profiles[vendor]['category_scores'][category] += matches
-                
-                if matches > 0:
-                    risk_profiles[vendor]['risk_factors'].extend([k for k in keywords if k in content])
-        
-        # Calculate overall risk score
-        for vendor, profile in risk_profiles.items():
-            score = 0
-            score += profile['category_scores']['high_risk'] * 10  # High risk keywords worth 10 points
-            score += profile['category_scores']['medium_risk'] * 5  # Medium risk keywords worth 5 points
-            score += profile['category_scores']['recruitment'] * 3   # Recruitment keywords worth 3 points
-            score -= profile['category_scores']['trust_building'] * 2  # Trust building reduces risk
-            
-            profile['risk_score'] = max(0, score)  # Ensure non-negative
-            profile['risk_level'] = self.categorize_risk(profile['risk_score'])
-        
-        return risk_profiles
-    
-    def categorize_risk(self, score):
-        """Categorize risk level based on score"""
-        if score >= 20:
-            return 'CRITICAL'
-        elif score >= 10:
-            return 'HIGH'
-        elif score >= 5:
-            return 'MEDIUM'
-        else:
-            return 'LOW'
-    
-    def analyze_price_evolution(self, marketplace_data, previous_data):
-        """Analyze price changes and trends"""
-        price_analysis = {}
-        
-        # Extract numeric prices from current data
-        for entry in marketplace_data:
-            vendor = entry['vendor_handle']
-            price_str = entry['price']
-            
-            if vendor not in price_analysis:
-                price_analysis[vendor] = {
-                    'current_prices': [],
-                    'historical_prices': [],
-                    'price_trend': 'stable',
-                    'avg_price': 0
-                }
-            
-            # Extract numeric price
-            price_match = re.search(r'\$?(\d+(?:\.\d+)?)', price_str)
-            if price_match:
-                price = float(price_match.group(1))
-                price_analysis[vendor]['current_prices'].append(price)
-        
-        # Add historical data if available
-        if previous_data and 'previous_behavioral_data' in previous_data:
-            for vendor, historical in previous_data['previous_behavioral_data'].items():
-                if vendor in price_analysis and 'price_evolution' in historical:
-                    price_analysis[vendor]['historical_prices'] = historical['price_evolution']
-        
-        # Calculate trends
-        for vendor, data in price_analysis.items():
-            all_prices = data['historical_prices'] + data['current_prices']
-            if len(all_prices) >= 2:
-                if all_prices[-1] > all_prices[0]:
-                    data['price_trend'] = 'increasing'
-                elif all_prices[-1] < all_prices[0]:
-                    data['price_trend'] = 'decreasing'
-                else:
-                    data['price_trend'] = 'stable'
-                
-                data['avg_price'] = sum(all_prices) / len(all_prices)
-        
-        return price_analysis
-    
-    def generate_behavioral_report(self, data):
-        """Generate comprehensive behavioral analysis report"""
-        marketplace_data = data['marketplace_data']
-        
-        # Perform all analyses
-        patterns = self.analyze_posting_patterns(marketplace_data)
-        sentiment = self.analyze_sentiment(marketplace_data)
-        risk_profiles = self.analyze_risk_profile(marketplace_data)
-        price_evolution = self.analyze_price_evolution(marketplace_data, data)
-        
-        # Compile comprehensive report
-        report = {
-            'analysis_timestamp': datetime.now().isoformat(),
-            'vendors_analyzed': len(patterns),
-            'behavioral_profiles': {}
+        return {
+            'total_posts': len(posts),
+            'marketplaces': list(set(p['marketplace'] for p in vendor_posts)),
+            'first_post': posts[0].isoformat() if posts else None,
+            'latest_post': posts[-1].isoformat() if posts else None,
+            'avg_hours_between_posts': round(sum(time_diffs_hours) / len(time_diffs_hours), 2) if time_diffs_hours else 0,
+            'most_active_hour': Counter(p.hour for p in posts).most_common(1)[0][0] if posts else None,
+            'most_active_day': Counter(p.weekday() for p in posts).most_common(1)[0][0] if posts else None # Monday=0
         }
+
+    def _analyze_sentiment(self, vendor_posts):
+        """Analyzes sentiment and keyword indicators from post content."""
+        sentiments = [TextBlob(p['post_content']).sentiment for p in vendor_posts]
+        confidence_words = ['trust', 'reliable', 'guarantee', 'experience', 'reputation']
+        urgency_words = ['limited', 'fast', 'quick', 'urgent', 'now', 'today']
         
-        for vendor in patterns.keys():
+        all_content = " ".join(p['post_content'] for p in vendor_posts).lower()
+
+        return {
+            'avg_polarity': round(sum(s.polarity for s in sentiments) / len(sentiments), 3) if sentiments else 0,
+            'avg_subjectivity': round(sum(s.subjectivity for s in sentiments) / len(sentiments), 3) if sentiments else 0,
+            'confidence_indicators': sum(word in all_content for word in confidence_words),
+            'urgency_indicators': sum(word in all_content for word in urgency_words)
+        }
+
+    def _analyze_risk_profile(self, vendor_posts):
+        """Calculates a risk score based on keywords in post content."""
+        profile = {
+            'risk_score': 0,
+            'risk_factors': set(),
+            'category_scores': Counter()
+        }
+        all_content = " ".join(p['post_content'] for p in vendor_posts).lower()
+        
+        for category, keywords in self.risk_keywords.items():
+            for keyword in keywords:
+                if keyword in all_content:
+                    profile['category_scores'][category] += 1
+                    profile['risk_factors'].add(keyword)
+        
+        score = (
+            profile['category_scores']['high_risk'] * 10 +
+            profile['category_scores']['medium_risk'] * 5 +
+            profile['category_scores']['recruitment'] * 3 -
+            profile['category_scores']['trust_building'] * 2
+        )
+        profile['risk_score'] = max(0, score)
+        profile['risk_factors'] = sorted(list(profile['risk_factors']))
+        profile['risk_level'] = self._categorize_risk(profile['risk_score'])
+        return profile
+
+    def _categorize_risk(self, score):
+        if score >= 20: return 'CRITICAL'
+        if score >= 10: return 'HIGH'
+        if score >= 5: return 'MEDIUM'
+        return 'LOW'
+
+    def generate_report(self, data: dict) -> dict:
+        """Generates a comprehensive behavioral analysis report for all vendors."""
+        marketplace_data = data.get('marketplace_data', [])
+        if not marketplace_data:
+            logger.warning("Input data contains no 'marketplace_data'. Cannot generate report.")
+            return {}
+            
+        # Group posts by vendor
+        vendor_data = defaultdict(list)
+        for entry in marketplace_data:
+            vendor_data[entry['vendor_handle']].append(entry)
+
+        report = {'behavioral_profiles': {}}
+        for vendor, posts in vendor_data.items():
+            patterns = self._analyze_posting_patterns(posts)
+            sentiment = self._analyze_sentiment(posts)
+            risk = self._analyze_risk_profile(posts)
+            
+            # Combine all analyses to calculate an overall threat level
+            threat_score = risk.get('risk_score', 0)
+            if sentiment.get('avg_polarity', 0) < -0.2: threat_score += 5
+            if patterns.get('avg_hours_between_posts', 999) < 24: threat_score += 3
+            if len(patterns.get('marketplaces', [])) > 1: threat_score += 5
+            
             report['behavioral_profiles'][vendor] = {
-                'posting_patterns': patterns.get(vendor, {}),
-                'sentiment_analysis': sentiment.get(vendor, {}),
-                'risk_profile': risk_profiles.get(vendor, {}),
-                'price_analysis': price_evolution.get(vendor, {}),
-                'overall_threat_level': self.calculate_threat_level(
-                    risk_profiles.get(vendor, {}),
-                    sentiment.get(vendor, {}),
-                    patterns.get(vendor, {})
-                )
+                'posting_patterns': patterns,
+                'sentiment_analysis': sentiment,
+                'risk_profile': risk,
+                'overall_threat_level': self._categorize_risk(threat_score)
             }
         
+        report['analysis_timestamp'] = datetime.now().isoformat()
+        report['vendors_analyzed'] = len(vendor_data)
         return report
+
+def save_results(data: dict):
+    """Saves the final report to a JSON file."""
+    if not data or not data.get('behavioral_profiles'):
+        logger.warning("No behavioral profiles generated, nothing to save.")
+        return
+        
+    try:
+        output_dir = os.path.join(os.path.dirname(__file__), '..', 'output')
+        os.makedirs(output_dir, exist_ok=True)
+        output_file = os.path.join(output_dir, 'feature_12_behavioral_analysis.json')
+
+        with open(output_file, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=4, ensure_ascii=False)
+            
+        logger.info(f"💾 Results successfully saved to: {output_file}")
+    except Exception as e:
+        logger.error(f"❌ ERROR: Failed to save results to file: {e}")
+
+def main():
+    logger.info("🚀 Starting Feature 12: Behavioral Analysis...")
     
-    def calculate_threat_level(self, risk_profile, sentiment, patterns):
-        """Calculate overall threat level based on multiple factors"""
-        threat_score = 0
+    # In a pipeline, this would read from a previous step's output file.
+    # For now, we create a dummy input file.
+    INPUT_FILE = "mock_behavioral_input_data.json"
+    if not os.path.exists(INPUT_FILE):
+        logger.warning(f"'{INPUT_FILE}' not found. Creating a dummy file for testing.")
+        dummy_data = {
+            "marketplace_data": [
+                {"vendor_handle": "CyberCriminal", "marketplace": "AlphaBay", "post_content": "Selling new 0day exploit for Windows.", "price": "$5000", "timestamp": "2025-08-01T10:00:00Z"},
+                {"vendor_handle": "CarderKing", "marketplace": "Dread", "post_content": "Fresh CVV dumps available. Best quality, guaranteed.", "price": "$50", "timestamp": "2025-08-01T11:00:00Z"},
+                {"vendor_handle": "CyberCriminal", "marketplace": "Dread", "post_content": "Join our RaaS affiliate team for high profit.", "price": "N/A", "timestamp": "2025-08-01T18:00:00Z"}
+            ],
+            "previous_behavioral_data": {} # For price evolution, not implemented in this version
+        }
+        with open(INPUT_FILE, 'w') as f:
+            json.dump(dummy_data, f, indent=2)
+
+    try:
+        with open(INPUT_FILE, 'r') as f:
+            input_data = json.load(f)
         
-        # Risk score contribution
-        if risk_profile:
-            threat_score += risk_profile.get('risk_score', 0)
+        analyzer = BehavioralAnalyzer()
+        report = analyzer.generate_report(input_data)
         
-        # Sentiment contribution (negative sentiment increases threat)
-        if sentiment and sentiment.get('avg_polarity', 0) < -0.2:
-            threat_score += 5
+        if report:
+            save_results(report)
+            print("\n--- Behavioral Analysis Summary ---")
+            for vendor, profile in report['behavioral_profiles'].items():
+                print(f"Vendor: {vendor}, Threat Level: {profile['overall_threat_level']}")
+            print("---------------------------------")
         
-        # Posting frequency contribution (very frequent posting increases threat)
-        if patterns and patterns.get('avg_time_between_posts', 0) < 24:  # Less than 24 hours
-            threat_score += 3
-        
-        # Multiple marketplace presence
-        if patterns and len(patterns.get('marketplaces', [])) > 2:
-            threat_score += 2
-        
-        # Categorize threat level
-        if threat_score >= 25:
-            return 'CRITICAL'
-        elif threat_score >= 15:
-            return 'HIGH'
-        elif threat_score >= 8:
-            return 'MEDIUM'
-        else:
-            return 'LOW'
-    
-    def send_to_webhook(self, report):
-        """Send analysis report to n8n webhook with comprehensive error handling"""
-        try:
-            webhook_url = get_n8n_webhook_url('behavioral-analysis')
-            print(f"📡 Attempting to send data to: {webhook_url}")
-            
-            payload = {
-                'feature': 'behavioral_analysis',
-                'data': report,
-                'metadata': {
-                    'analysis_timestamp': datetime.now().isoformat(),
-                    'feature_version': '1.0',
-                    'data_source': 'mock_input_data.json'
-                }
-            }
-            
-            # Configure request with proper timeout and headers
-            headers = {
-                'Content-Type': 'application/json',
-                'User-Agent': 'OSINT-Pipeline-Feature-12/1.0'
-            }
-            
-            response = requests.post(
-                webhook_url, 
-                json=payload, 
-                headers=headers,
-                timeout=15,  # Reduced timeout for faster feedback
-                verify=True  # SSL verification
-            )
-            
-            if response.status_code == 200:
-                print(f"✅ Successfully sent behavioral analysis to webhook")
-                print(f"   Response: {response.text[:100]}..." if len(response.text) > 100 else f"   Response: {response.text}")
-                return True
-            elif response.status_code == 404:
-                print(f"⚠️  Webhook endpoint not found (404). Please set up n8n webhook first.")
-                print(f"   Expected endpoint: {webhook_url}")
-                return False
-            elif response.status_code == 502 or response.status_code == 503:
-                print(f"⚠️  n8n service temporarily unavailable ({response.status_code})")
-                return False
-            else:
-                print(f"❌ Webhook request failed with status: {response.status_code}")
-                print(f"   Response: {response.text[:200]}..." if len(response.text) > 200 else f"   Response: {response.text}")
-                return False
-                
-        except requests.exceptions.ConnectTimeout:
-            print(f"⏰ Connection timeout - n8n webhook not responding within 15 seconds")
-            print(f"   This is expected if n8n webhook is not set up yet")
-            return False
-        except requests.exceptions.ConnectionError as e:
-            print(f"🔌 Connection error - cannot reach n8n webhook")
-            print(f"   This is expected if n8n webhook is not set up yet")
-            print(f"   Details: {str(e)[:100]}...")
-            return False
-        except requests.exceptions.ReadTimeout:
-            print(f"⏰ Read timeout - n8n webhook response took too long")
-            return False
-        except requests.exceptions.RequestException as e:
-            print(f"🌐 Network request error: {str(e)[:100]}...")
-            return False
-        except json.JSONEncodeError as e:
-            print(f"📄 JSON serialization error: {e}")
-            print(f"   Check for non-serializable objects in report data")
-            return False
-        except Exception as e:
-            print(f"❌ Unexpected error sending to webhook: {type(e).__name__}: {str(e)[:100]}...")
-            return False
-    
-    def run_analysis(self, data_file='mock_input_data.json'):
-        """Main analysis function"""
-        print("🔍 Starting Behavioral Analysis (Feature 12)...")
-        
-        # Load data
-        data = self.load_data(data_file)
-        if not data:
-            print("❌ Failed to load data")
-            return
-        
-        # Generate report
-        report = self.generate_behavioral_report(data)
-        
-        # Display results
-        print(f"\n📊 BEHAVIORAL ANALYSIS REPORT - {report['analysis_timestamp']}")
-        print("=" * 80)
-        
-        for vendor, profile in report['behavioral_profiles'].items():
-            print(f"\n🔸 VENDOR: {vendor}")
-            print(f"   Overall Threat Level: {profile['overall_threat_level']}")
-            print(f"   Risk Score: {profile['risk_profile'].get('risk_score', 0)}")
-            print(f"   Risk Level: {profile['risk_profile'].get('risk_level', 'UNKNOWN')}")
-            print(f"   Total Posts: {profile['posting_patterns'].get('total_posts', 0)}")
-            print(f"   Marketplaces: {len(profile['posting_patterns'].get('marketplaces', []))}")
-            print(f"   Avg Sentiment: {profile['sentiment_analysis'].get('avg_polarity', 0):.2f}")
-            
-            if profile['risk_profile'].get('risk_factors'):
-                print(f"   Risk Factors: {', '.join(set(profile['risk_profile']['risk_factors']))}")
-        
-        # Send to webhook
-        print("\n📡 Sending results to n8n webhook...")
-        self.send_to_webhook(report)
-        
-        print("\n✅ Behavioral analysis completed!")
-        return report
+    except Exception as e:
+        logger.critical(f"A critical error occurred: {e}")
+
+    logger.info("✅ Behavioral analysis completed.")
 
 if __name__ == "__main__":
-    analyzer = BehavioralAnalyzer()
-    analyzer.run_analysis()
-
+    main()

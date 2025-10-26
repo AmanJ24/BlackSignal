@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 """
-Hash Extraction and Malware IOC Analysis - Feature 8
+Feature 8: Hash Extraction and Malware IOC Analysis (Local Version)
 
-Extracts MD5, SHA1, and SHA256 hashes from collected data and enriches
-them with threat intelligence using VirusTotal API.
-
-Author: Dark Web OSINT Pipeline
-Date: 2025-07-31
+Extracts MD5, SHA1, and SHA256 hashes from text data, enriches them
+with threat intelligence from the VirusTotal API, and saves the results
+to a local JSON file.
 """
 
 import re
@@ -17,219 +15,183 @@ import time
 from datetime import datetime
 from typing import Dict, List, Optional, Any
 import requests
-from dotenv import load_dotenv
 
 # Add parent directory to path for config import
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from config import get_n8n_webhook_url, get_api_key
+try:
+    from config import get_api_key
+except ImportError:
+    def get_api_key(key_name):
+        return os.environ.get(key_name.upper() + "_API_KEY")
+
+# Configure logging
+log_dir = os.path.join(os.path.dirname(__file__), '..', 'logs')
+os.makedirs(log_dir, exist_ok=True)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler(os.path.join(log_dir, 'hash_extractor.log')),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 
 class HashExtractor:
-    """Extracts and enriches file hashes with threat intelligence"""
+    """Extracts and enriches file hashes with threat intelligence."""
     
     def __init__(self):
         self.virustotal_api_key = get_api_key('virustotal')
-        self.webhook_url = get_n8n_webhook_url('hash-extract')
         self.hash_patterns = {
-            'MD5': r'\b[a-fA-F0-9]{32}\b',
-            'SHA1': r'\b[a-fA-F0-9]{40}\b',
-            'SHA256': r'\b[a-fA-F0-9]{64}\b'
+            'md5': re.compile(r'\b[a-fA-F0-9]{32}\b'),
+            'sha1': re.compile(r'\b[a-fA-F0-9]{40}\b'),
+            'sha256': re.compile(r'\b[a-fA-F0-9]{64}\b')
         }
         self.virustotal_base_url = 'https://www.virustotal.com/api/v3/files'
         
     def extract_hashes(self, text: str) -> Dict[str, List[str]]:
-        """Extract hashes from text using regex patterns."""
-        extracted_hashes = {}
+        """Extracts hashes from text using regex patterns."""
+        extracted = {}
         for hash_type, pattern in self.hash_patterns.items():
-            matches = re.findall(pattern, text)
-            # Remove duplicates while preserving order
-            unique_matches = list(dict.fromkeys(matches))
-            extracted_hashes[hash_type] = unique_matches
-        return extracted_hashes
+            matches = list(dict.fromkeys(pattern.findall(text)))
+            if matches:
+                extracted[hash_type] = matches
+        return extracted
     
     def query_virustotal(self, hash_value: str) -> Optional[Dict[str, Any]]:
-        """Query VirusTotal for threat intelligence on a given hash."""
+        """Queries VirusTotal for threat intelligence on a given hash."""
         if not self.virustotal_api_key:
-            print(f"⚠️  No VirusTotal API key found. Skipping enrichment for {hash_value}")
-            return {
-                "error": "No API key",
-                "hash": hash_value,
-                "message": "VirusTotal API key not configured"
-            }
+            logger.warning(f"No VirusTotal API key found. Skipping enrichment for {hash_value}")
+            return {"hash": hash_value, "status": "skipped", "message": "API key not configured"}
             
-        headers = {
-            'x-apikey': self.virustotal_api_key
-        }
+        headers = {'x-apikey': self.virustotal_api_key}
         
         try:
-            time.sleep(15)
-
-            response = requests.get(
-                f'{self.virustotal_base_url}/{hash_value}', 
-                headers=headers,
-                timeout=10
-            )
+            # Rate limit before the request
+            time.sleep(16)
+            response = requests.get(f'{self.virustotal_base_url}/{hash_value}', headers=headers, timeout=20)
             
             if response.status_code == 200:
-                data = response.json()
-                # Extract key information
+                data = response.json().get('data', {}).get('attributes', {})
+                stats = data.get('last_analysis_stats', {})
                 return {
                     "hash": hash_value,
-                    "malicious": data.get('data', {}).get('attributes', {}).get('last_analysis_stats', {}).get('malicious', 0),
-                    "suspicious": data.get('data', {}).get('attributes', {}).get('last_analysis_stats', {}).get('suspicious', 0),
-                    "harmless": data.get('data', {}).get('attributes', {}).get('last_analysis_stats', {}).get('harmless', 0),
-                    "first_seen": data.get('data', {}).get('attributes', {}).get('first_submission_date'),
-                    "last_seen": data.get('data', {}).get('attributes', {}).get('last_submission_date'),
-                    "names": data.get('data', {}).get('attributes', {}).get('names', [])[:5]  # First 5 names
+                    "status": "found",
+                    "malicious": stats.get('malicious', 0),
+                    "suspicious": stats.get('suspicious', 0),
+                    "harmless": stats.get('harmless', 0),
+                    "first_seen": data.get('first_submission_date'),
+                    "names": data.get('names', [])[:5]
                 }
             elif response.status_code == 404:
-                return {
-                    "hash": hash_value,
-                    "status": "not_found",
-                    "message": "Hash not found in VirusTotal database"
-                }
+                return {"hash": hash_value, "status": "not_found"}
             else:
-                return {
-                    "hash": hash_value,
-                    "error": f"HTTP {response.status_code}",
-                    "message": "Failed to query VirusTotal"
-                }
+                logger.error(f"VirusTotal returned status {response.status_code} for {hash_value}")
+                return {"hash": hash_value, "status": "error", "error_code": response.status_code}
                 
-        except requests.exceptions.RequestException as e:
-            return {
-                "hash": hash_value,
-                "error": "Request failed",
-                "message": str(e)
-            }
+        except requests.RequestException as e:
+            logger.error(f"VirusTotal request failed for {hash_value}: {e}")
+            return {"hash": hash_value, "status": "error", "message": str(e)}
     
-    def send_to_webhook(self, data: Dict[str, Any]) -> bool:
-        """Send processed data to n8n webhook"""
-        try:
-            response = requests.post(
-                self.webhook_url,
-                json=data,
-                headers={'Content-Type': 'application/json'},
-                timeout=30
-            )
-            
-            if response.status_code == 200:
-                print(f"✅ Successfully sent data to webhook: {self.webhook_url}")
-                return True
-            else:
-                print(f"⚠️  Webhook returned status {response.status_code}")
-                return False
-                
-        except requests.exceptions.RequestException as e:
-            print(f"❌ Failed to send to webhook: {e}")
-            return False
-    
-    def process_data(self, source_data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """Process input data for hash extraction and enrichment."""
-        results = []
+    def process_data(self, source_data: List[Dict[str, Any]]) -> List[Dict]:
+        """Processes a list of text entries to find and enrich hashes."""
+        all_results = []
         
         for entry in source_data:
-            print(f"🔍 Processing data from {entry.get('source', 'unknown')}...")
+            logger.info(f"🔍 Processing data from source: {entry.get('source', 'unknown')}...")
+            text_content = entry.get("data", "")
             
-            # Extract hashes
-            hash_details = self.extract_hashes(entry['data'])
-            total_hashes = sum(len(hashes) for hashes in hash_details.values())
+            extracted_hashes = self.extract_hashes(text_content)
+            total_hashes = sum(len(h) for h in extracted_hashes.values())
             
-            print(f"📊 Found {total_hashes} hashes:")
-            for hash_type, hashes in hash_details.items():
-                if hashes:
-                    print(f"   - {hash_type}: {len(hashes)} hashes")
+            if total_hashes == 0:
+                logger.info("No hashes found in this entry.")
+                continue
             
-            # Enrich with VirusTotal data (only if hashes found)
-            enriched_data = {}
-            if total_hashes > 0:
-                print("🔬 Enriching with VirusTotal data...")
-                for hash_type, hashes in hash_details.items():
-                    if hashes:
-                        enriched_data[hash_type] = []
-                        for hash_value in hashes:
-                            vt_result = self.query_virustotal(hash_value)
-                            enriched_data[hash_type].append(vt_result)
+            logger.info(f"📊 Found {total_hashes} unique hashes.")
             
-            # Create result structure
-            result = {
-                'timestamp': datetime.utcnow().isoformat(),
-                'feature': 'Hash Extraction (Malware IOCs)',
-                'input_text': entry['data'][:200] + "..." if len(entry['data']) > 200 else entry['data'],
-                'hashes_found': total_hashes,
-                'hashes': hash_details,
-                'virustotal_enrichment': enriched_data,
+            enriched_hashes = []
+            for hash_type, hashes in extracted_hashes.items():
+                for hash_value in hashes:
+                    enrichment = self.query_virustotal(hash_value)
+                    enrichment['hash_type'] = hash_type
+                    enriched_hashes.append(enrichment)
+            
+            entry_result = {
                 'source': entry.get('source', 'unknown'),
-                'source_timestamp': entry.get('timestamp', datetime.utcnow().isoformat()),
-                'webhook_url': self.webhook_url
+                'source_timestamp': entry.get('timestamp'),
+                'analysis_timestamp': datetime.now().isoformat(),
+                'hashes_found': total_hashes,
+                'enrichment_results': enriched_hashes
             }
+            all_results.append(entry_result)
             
-            results.append(result)
-            
-        return results
+        return all_results
 
-
-def load_sample_data(filename: str = 'sample_hash_data.json') -> List[Dict[str, Any]]:
-    """Load sample data from JSON file"""
+def save_results(data: List[Dict]):
+    """Saves the enriched hash data to a JSON file."""
+    if not data:
+        logger.warning("No enriched hashes to save.")
+        return
+        
     try:
-        with open(filename, 'r') as file:
-            data = json.load(file)
-            print(f"📂 Loaded {len(data)} entries from {filename}")
-            return data
-    except FileNotFoundError:
-        print(f"❌ File {filename} not found")
-        return []
-    except json.JSONDecodeError as e:
-        print(f"❌ Error parsing JSON: {e}")
-        return []
+        output_dir = os.path.join(os.path.dirname(__file__), '..', 'output')
+        os.makedirs(output_dir, exist_ok=True)
+        output_file = os.path.join(output_dir, 'feature_8_hash_analysis.json')
+        
+        final_payload = {
+            "feature_name": "Hash Extraction & Analysis",
+            "execution_timestamp": datetime.now().isoformat(),
+            "total_entries_analyzed": len(data),
+            "analysis_results": data
+        }
 
+        with open(output_file, 'w', encoding='utf-8') as f:
+            json.dump(final_payload, f, indent=4, ensure_ascii=False)
+            
+        logger.info(f"💾 Results successfully saved to: {output_file}")
+    except Exception as e:
+        logger.error(f"❌ ERROR: Failed to save results to file: {e}")
 
 if __name__ == "__main__":
-    print("🚀 Hash Extraction Feature 8 - Starting...")
-    print("=" * 50)
+    logger.info("🚀 Starting Feature 8: Hash Extraction & Analysis...")
     
-    # Initialize hash extractor
-    extractor = HashExtractor()
-    
-    # Load sample input data
-    sample_data = load_sample_data()
-    
-    if not sample_data:
-        print("❌ No sample data available. Exiting.")
-        sys.exit(1)
-    
-    # Process data
-    result_data = extractor.process_data(sample_data)
-    
-    # Print results in readable format
-    print("\n" + "=" * 50)
-    print("📊 RESULTS:")
-    print("=" * 50)
-    
-    for result in result_data:
-        print(f"\n🎯 Source: {result['source']}")
-        print(f"📅 Timestamp: {result['timestamp']}")
-        print(f"🔢 Hashes Found: {result['hashes_found']}")
+    # In a pipeline, this file would be the output of a previous feature.
+    # We create a dummy version here for standalone testing.
+    INPUT_FILE = "sample_hash_input_data.json"
+    if not os.path.exists(INPUT_FILE):
+        logger.warning(f"'{INPUT_FILE}' not found. Creating a dummy file for testing.")
+        dummy_data = [
+            {
+                "source": "MarketplaceScrape",
+                "timestamp": "2025-08-01T12:00:00Z",
+                "data": "Download our new tool. SHA256: 275a021bbfb6489e54d471899f7db9d1663fc695ec2fe2a2c4538aabf651fd0f. Also an old md5: d41d8cd98f00b204e9800998ecf8427e."
+            },
+            {
+                "source": "ForumPost",
+                "timestamp": "2025-08-01T13:00:00Z",
+                "data": "Avoid this file, VT says it's bad: aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434d (SHA1)"
+            }
+        ]
+        with open(INPUT_FILE, 'w') as f:
+            json.dump(dummy_data, f, indent=2)
+
+    try:
+        input_data = json.load(open(INPUT_FILE, 'r'))
+        extractor = HashExtractor()
+        results = extractor.process_data(input_data)
         
-        if result['hashes_found'] > 0:
-            for hash_type, hashes in result['hashes'].items():
-                if hashes:
-                    print(f"   {hash_type}: {hashes}")
-        
-        # Show VirusTotal enrichment summary
-        if result.get('virustotal_enrichment'):
-            print("🔬 VirusTotal Analysis:")
-            for hash_type, enrichments in result['virustotal_enrichment'].items():
-                for enrichment in enrichments:
-                    if 'malicious' in enrichment:
-                        malicious = enrichment.get('malicious', 0)
-                        suspicious = enrichment.get('suspicious', 0)
-                        status = "🚨 MALICIOUS" if malicious > 0 else "🟡 SUSPICIOUS" if suspicious > 0 else "✅ CLEAN"
-                        print(f"   {enrichment['hash'][:16]}... -> {status} (M:{malicious}, S:{suspicious})")
-                    elif 'error' in enrichment:
-                        print(f"   {enrichment['hash'][:16]}... -> ⚠️  {enrichment.get('message', 'Error')}")
-    
-    print(f"\n🔗 Webhook URL: {extractor.webhook_url}")
-    print("✅ Hash extraction completed!")
-    
-    # Uncomment to send to webhook in production
-    for result in result_data:
-        extractor.send_to_webhook(result)
+        if results:
+            save_results(results)
+            print("\n--- Hash Analysis Complete ---")
+            print(f"Processed {len(results)} entries containing hashes.")
+            print("------------------------------")
+        else:
+            logger.info("No hashes were found or processed.")
+            
+    except FileNotFoundError:
+        logger.error(f"Input file '{INPUT_FILE}' not found.")
+    except Exception as e:
+        logger.critical(f"A critical error occurred: {e}")
+
+    logger.info("✅ Hash extraction process finished.")

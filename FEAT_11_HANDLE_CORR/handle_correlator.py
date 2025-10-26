@@ -1,158 +1,139 @@
 #!/usr/bin/env python3
 """
-Feature 11: Handle Correlation
+Feature 11: Handle Correlation (Local Version)
 
-This module correlates threat actor handles across multiple platforms and marketplaces
-to identify known actors and track their activities across the dark web ecosystem.
-
-Author: OSINT Pipeline Project
-Created: 2025-08-01
+This module correlates threat actor handles against a local database of known actors
+to identify matches and saves the results to a local JSON file.
 """
 
 import json
-import logging
-import requests
 import os
 import sys
-from typing import Dict, Any, List, Optional
+import logging
+from typing import Dict, Any, List
 from datetime import datetime
-from collections import defaultdict
 
-# Add parent directory to path for config imports
+# Add parent directory to path for config imports (optional for this script)
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# Set up logging
+# Configure logging
+log_dir = os.path.join(os.path.dirname(__file__), '..', 'logs')
+os.makedirs(log_dir, exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('../logs/handle_correlation.log'),
+        logging.FileHandler(os.path.join(log_dir, 'handle_correlation.log')),
         logging.StreamHandler()
     ]
 )
 logger = logging.getLogger(__name__)
 
-# Try to import config, handle if not available
-try:
-    from config import get_n8n_webhook_url
-    CONFIG_AVAILABLE = True
-except ImportError as e:
-    logger.warning(f"Config module not available: {e}. Using fallback configuration.")
-    CONFIG_AVAILABLE = False
-
-class HandleCorrelationError(Exception):
-    pass
-
 class HandleCorrelator:
-    def __init__(self):
-        self.known_handles = self.load_known_handles('known_handles.json')
-        logger.info(f"Loaded {len(self.known_handles)} known handles.")
+    """Correlates threat actor handles against a known database."""
 
-    def load_known_handles(self, filepath: str) -> Dict[str, Any]:
-        """Load known handles from a JSON file"""
+    def __init__(self, known_handles_path: str = 'known_handles.json'):
+        self.known_handles_path = known_handles_path
+        self.known_handles = self._load_known_handles()
+        logger.info(f"Loaded {len(self.known_handles)} known threat actor handles.")
+
+    def _load_known_handles(self) -> Dict[str, Any]:
+        """Loads the known handles database from a JSON file."""
+        # For a local pipeline, the database should be in the feature directory.
+        db_path = os.path.join(os.path.dirname(__file__), self.known_handles_path)
+        if not os.path.exists(db_path):
+            logger.warning(f"'{self.known_handles_path}' not found. Creating a dummy file for testing.")
+            dummy_handles = {
+                "Gnosticplayers": {"risk": "High", "groups": ["Data Breach Broker"]},
+                "ShinyHunters": {"risk": "High", "groups": ["Data Breach Seller", "Shiny Hunters"]},
+                "LulzSec": {"risk": "Critical", "groups": ["Hacktivist"]}
+            }
+            with open(db_path, 'w') as f:
+                json.dump(dummy_handles, f, indent=2)
+            return dummy_handles
         try:
-            with open(filepath, 'r') as file:
+            with open(db_path, 'r') as file:
                 return json.load(file)
-        except FileNotFoundError:
-            logger.warning(f"File {filepath} not found, starting with an empty list.")
-            return {}
         except json.JSONDecodeError as e:
-            logger.error(f"Error decoding JSON from {filepath}: {e}")
+            logger.error(f"Error decoding JSON from {self.known_handles_path}: {e}")
             return {}
 
-    def compare_handle(self, handle: str) -> Dict[str, str]:
-        """Compare handle against known handles"""
-        try:
-            is_known = handle in self.known_handles
-            status = "known" if is_known else "unknown"
-            logger.info(f"Handle '{handle}' status: {status}")
-            return {"handle": handle, "status": status}
-        except Exception as e:
-            logger.error(f"Error comparing handle '{handle}': {e}")
-            raise HandleCorrelationError(f"Error comparing handle '{handle}': {e}")
+    def correlate_handles(self, handles: List[str]) -> List[Dict]:
+        """Correlates a list of handles against the known database."""
+        results = []
+        for handle in set(handles):  # Use set to process unique handles only
+            is_known = handle.lower() in [h.lower() for h in self.known_handles.keys()]
+            if is_known:
+                # Find the original case for displaying info
+                original_case_handle = next((h for h in self.known_handles if h.lower() == handle.lower()), handle)
+                results.append({
+                    "handle": original_case_handle,
+                    "status": "known",
+                    "details": self.known_handles.get(original_case_handle)
+                })
+            else:
+                results.append({
+                    "handle": handle,
+                    "status": "unknown",
+                    "details": None
+                })
+        logger.info(f"Correlated {len(handles)} handles. Found {len([r for r in results if r['status'] == 'known'])} known actors.")
+        return results
 
-    def correlate(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Correlate handles with existing data"""
-        try:
-            results = []
-            for entry in data.get('extracted_handles', []):
-                handle_info = self.compare_handle(entry['handle'])
-                results.append({"handle": entry['handle'], "status": handle_info['status']})
-            return {"results": results, "source": data.get('source')}
-        except KeyError as e:
-            logger.error(f"Key error: {e}")
-            raise HandleCorrelationError(f"Key error during correlation: {e}")
-        except Exception as e:
-            logger.error(f"General error during correlation: {e}")
-            raise HandleCorrelationError(f"General error during correlation: {e}")
-
-def send_to_webhook(data: Dict[str, Any]):
-    """Sends the handle correlation results to the n8n webhook."""
-    webhook_url = get_n8n_webhook_url('handle-correlation') if CONFIG_AVAILABLE else "https://sipiv63984.app.n8n.cloud/webhook-test/handle-correlation"
-    if not webhook_url:
-        logger.warning("Webhook URL for 'handle-correlation' not configured. Skipping.")
-        return False
-    try:
-        payload = {
-            "timestamp": datetime.now().isoformat(),
-            "feature": "Handle Correlation",
-            "source": data.get("source", "unknown"),
-            "correlation_results": data.get("results", [])
-        }
-        response = requests.post(webhook_url, json=payload, timeout=20)
-        response.raise_for_status()
-        logger.info(f"✅ Successfully sent {len(data.get('results', []))} handle correlations to webhook.")
-        return True
-    except requests.exceptions.RequestException as e:
-        logger.error(f"❌ Failed to send data to webhook: {e}")
-        return False
-
-
-# Main Function
-if __name__ == "__main__":
-    # In a real pipeline, this data would come from another feature (e.g., scraping)
-    sample_input_data = {
-        "source": "Dark Web Marketplace A",
-        "extracted_handles": [
-            {"handle": "Gnosticplayers"},
-            {"handle": "UnknownVendor123"},
-            {"handle": "ShinyHunters"},
-            {"handle": "NewUser2025"}
-        ]
-    }
-    
-    # For testing, ensure 'known_handles.json' exists.
-    # If not, create a dummy one.
-    if not os.path.exists('known_handles.json'):
-        logger.warning("known_handles.json not found. Creating a dummy file for testing.")
-        dummy_known_handles = {
-            "Gnosticplayers": { "risk": "High", "associated_group": "Data Breach Brokers" },
-            "ShinyHunters": { "risk": "High", "associated_group": "Data Breach Sellers" },
-            "LulzSec": { "risk": "Critical", "associated_group": "Hacktivist Group" }
-        }
-        with open('known_handles.json', 'w') as f:
-            json.dump(dummy_known_handles, f, indent=2)
-
-    
-    print("🚀 Handle Correlation Feature 11 - Starting...")
-    print("=" * 50)
-    
-    correlator = HandleCorrelator()
-    
-    try:
-        correlation_result = correlator.correlate(sample_input_data)
+def save_results(data: List[Dict]):
+    """Saves the correlation results to a JSON file."""
+    if not data:
+        logger.warning("No correlation results to save.")
+        return
         
-        print("📊 Correlation Results:")
-        for result in correlation_result.get("results", []):
-            status_icon = "✅" if result['status'] == 'known' else "❓"
-            print(f"  {status_icon} Handle: {result['handle']:<20} | Status: {result['status']}")
+    try:
+        output_dir = os.path.join(os.path.dirname(__file__), '..', 'output')
+        os.makedirs(output_dir, exist_ok=True)
+        output_file = os.path.join(output_dir, 'feature_11_handle_correlation.json')
+        
+        final_payload = {
+            "feature_name": "Handle Correlation",
+            "execution_timestamp": datetime.now().isoformat(),
+            "handles_analyzed": len(data),
+            "known_handles_found": len([h for h in data if h['status'] == 'known']),
+            "correlation_results": data
+        }
+
+        with open(output_file, 'w', encoding='utf-8') as f:
+            json.dump(final_payload, f, indent=4, ensure_ascii=False)
             
-        # Send the final results to the webhook
-        if correlation_result.get("results"):
-            send_to_webhook(correlation_result)
+        logger.info(f"💾 Results successfully saved to: {output_file}")
+    except Exception as e:
+        logger.error(f"❌ ERROR: Failed to save results to file: {e}")
+
+if __name__ == "__main__":
+    logger.info("🚀 Starting Feature 11: Handle Correlation...")
+    
+    # In a real pipeline, this input would come from a file (e.g., IOC or NER output).
+    # For standalone testing, we use a sample list.
+    sample_handles_to_check = [
+        "Gnosticplayers",
+        "UnknownVendor123",
+        "ShinyHunters",
+        "NewUser2025",
+        "shinyhunters" # Test case-insensitivity
+    ]
+
+    try:
+        correlator = HandleCorrelator()
+        correlation_results = correlator.correlate_handles(sample_handles_to_check)
         
-    except HandleCorrelationError as e:
-        logger.error(f"An error occurred during handle correlation: {e}")
+        if correlation_results:
+            print("\n--- Correlation Results ---")
+            for result in correlation_results:
+                status_icon = "✅" if result['status'] == 'known' else "❓"
+                print(f"  {status_icon} Handle: {result['handle']:<20} | Status: {result['status']}")
+            print("---------------------------")
+            save_results(correlation_results)
+        else:
+            logger.info("No handles were processed.")
+            
+    except Exception as e:
+        logger.critical(f"A critical error occurred during correlation: {e}")
 
-    print("\n✅ Handle correlation process completed!")
-
+    logger.info("✅ Handle correlation process completed.")

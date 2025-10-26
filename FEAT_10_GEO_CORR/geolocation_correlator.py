@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-Feature 10: Geolocation Correlation
+Feature 10: Geolocation Correlation (Local Version)
 
 This module correlates IP addresses with geolocation data to identify patterns
-and potential threats based on geographic distribution.
-
-Author: OSINT Pipeline Project
-Created: 2025-08-01
+and potential threats based on geographic distribution. It saves the results
+to a local JSON file.
 """
 
+import sys
+import os
 import requests
 import json
 import socket
@@ -16,273 +16,172 @@ import time
 import logging
 from typing import Dict, Any, List, Optional
 from datetime import datetime
-import sys
-import os
 
 # Add parent directory to path for config imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+try:
+    from config import get_api_key
+except ImportError:
+    def get_api_key(key_name):
+        return None
 
-# Set up logging
+# Configure logging
+log_dir = os.path.join(os.path.dirname(__file__), '..', 'logs')
+os.makedirs(log_dir, exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('../logs/geolocation_correlation.log'),
+        logging.FileHandler(os.path.join(log_dir, 'geolocation_correlation.log')),
         logging.StreamHandler()
     ]
 )
 logger = logging.getLogger(__name__)
 
-# Try to import config, handle if not available
-try:
-    from config import get_n8n_webhook_url, get_api_key
-    CONFIG_AVAILABLE = True
-except ImportError as e:
-    logger.warning(f"Config module not available: {e}. Using fallback configuration.")
-    CONFIG_AVAILABLE = False
-
-class GeolocationCorrelationError(Exception):
-    pass
-
 class GeolocationCorrelator:
-    # API endpoints
-    IPAPI_API_URL = "http://ip-api.com/json/"
-    BGPVIEW_API_URL = "https://api.bgpview.io/ip/"
-    SHODAN_API_URL = "https://api.shodan.io/shodan/host/"
+    """Correlates IP addresses with geolocation data."""
     
-    # High-risk countries for threat intelligence (example list)
-    HIGH_RISK_COUNTRIES = ['RU', 'CN', 'KP', 'IR', 'SY', 'AF']
-    
-    # Known VPN/Proxy providers (lowercased for comparison)
-    VPN_PROVIDERS = ['nordvpn', 'expressvpn', 'surfshark', 'private internet access', 
-                     'cyberghost', 'tunnelbear', 'hotspot shield', 'windscribe']
-    
-    # Request timeout and retry configuration
-    REQUEST_TIMEOUT = 10
-    MAX_RETRIES = 3
-    RETRY_DELAY = 1
-    
-    def __init__(self, shodan_api_key: str = None, use_mock_data: bool = False):
-        """Initialize GeolocationCorrelator with proper error handling"""
-        try:
-            if CONFIG_AVAILABLE:
-                self.shodan_api_key = shodan_api_key or get_api_key('shodan')
-                self.webhook_url = get_n8n_webhook_url('geo-correlation')
-            else:
-                self.shodan_api_key = shodan_api_key
-                self.webhook_url = "https://sipiv63984.app.n8n.cloud/webhook-test/geo-correlation"
-                
-            self.use_mock_data = use_mock_data
-            
-            # Check if API key is valid
-            if not self.shodan_api_key or self.shodan_api_key == "your_shodan_api_key":
-                logger.warning("No valid Shodan API key provided, using mock data")
-                self.use_mock_data = True
-                
-            logger.info(f"GeolocationCorrelator initialized. Mock data: {self.use_mock_data}")
-            
-        except Exception as e:
-            logger.error(f"Error initializing GeolocationCorrelator: {e}")
-            self.use_mock_data = True
-            self.webhook_url = "https://sipiv63984.app.n8n.cloud/webhook-test/geo-correlation"
+    IPAPI_URL = "http://ip-api.com/json/"
+    HIGH_RISK_COUNTRIES = ['RU', 'CN', 'KP', 'IR'] # Example list
+    VPN_PROVIDERS = ['nordvpn', 'expressvpn', 'private internet access', 'cyberghost']
 
-    def correlate_geolocation(self, ip_address: str) -> Dict[str, Any]:
-        """Correlate geolocation data for a given IP address"""
-        result = {
-            'ip_address': ip_address,
-            'timestamp': datetime.now().isoformat(),
-            'data_sources': []
-        }
-        
-        try:
-            # Basic IP validation
-            if not self._is_valid_ip(ip_address):
-                raise GeolocationCorrelationError(f"Invalid IP address: {ip_address}")
-
-            if self.use_mock_data:
-                print(f"🔄 Using mock data for IP: {ip_address}")
-                return self._get_mock_data(ip_address)
-
-            # IP-API call (free geolocation service)
-            ipapi_data = self.query_ipapi(ip_address)
-            if ipapi_data:
-                result['ipapi'] = ipapi_data
-                result['data_sources'].append('ipapi')
-
-            # BGPView API call (free ASN/network info)
-            bgpview_data = self.query_bgpview(ip_address)
-            if bgpview_data:
-                result['bgpview'] = bgpview_data
-                result['data_sources'].append('bgpview')
-
-            # Shodan API call (requires API key)
-            if self.shodan_api_key:
-                shodan_data = self.query_shodan(ip_address)
-                if shodan_data:
-                    result['shodan'] = shodan_data
-                    result['data_sources'].append('shodan')
-
-            # Comprehensive geolocation analysis
-            result['analysis'] = self._analyze_geolocation(result)
-
-        except Exception as e:
-            if self.use_mock_data:
-                print(f"🔄 API error, using mock data: {e}")
-                return self._get_mock_data(ip_address)
-            else:
-                raise GeolocationCorrelationError(f"Error correlating geolocation: {e}")
-
-        return result
-
-    def query_ipapi(self, ip_address: str) -> Dict[str, Any]:
-        response = requests.get(f"{self.IPAPI_API_URL}{ip_address}")
-        if response.status_code == 200:
-            return response.json()
-        else:
-            response.raise_for_status()
-
-    def query_bgpview(self, ip_address: str) -> Dict[str, Any]:
-        response = requests.get(f"{self.BGPVIEW_API_URL}{ip_address}")
-        if response.status_code == 200:
-            return response.json()
-        else:
-            response.raise_for_status()
-
-    def query_shodan(self, ip_address: str) -> Dict[str, Any]:
-        response = requests.get(f"{self.SHODAN_API_URL}{ip_address}",
-                                headers={"API-Key": self.shodan_api_key})
-        if response.status_code == 200:
-            return response.json()
-        else:
-            response.raise_for_status()
-
-    def _get_mock_data(self, ip_address: str) -> Dict[str, Any]:
-        """Generate mock data for testing when APIs are not available"""
-        mock_data = {
-            "ip_address": ip_address,
-            "timestamp": datetime.now().isoformat(),
-            "data_sources": ["mock_ipapi", "mock_bgpview", "mock_shodan"],
-            "ipapi": {
-                "country": "US",
-                "city": "Mock City",
-                "isp": "Mock ISP"
-            },
-            "bgpview": {
-                "data": {
-                    "ptr_record": f"mock-ptr-{ip_address.replace('.', '-')}.com",
-                    "rir_allocation": {
-                        "rir_name": "ARIN",
-                        "country_code": "US",
-                        "date_allocated": "2000-01-01 00:00:00"
-                    },
-                    "prefixes": [
-                        {
-                            "prefix": f"{ip_address}/24",
-                            "asn": {
-                                "asn": 15169,
-                                "name": "Mock AS",
-                                "description": "Mock AS",
-                                "country_code": "US"
-                            }
-                        }
-                    ]
-                }
-            },
-            "shodan": {
-                "os": "Linux",
-                "ports": [22, 80, 443],
-                "isp": "Mock ISP",
-                "country_code": "US"
-            },
-            "analysis": {}
-        }
-        mock_data["analysis"] = self._analyze_geolocation(mock_data)
-        return mock_data
+    def __init__(self, use_mock_data: bool = False):
+        self.use_mock_data = use_mock_data
+        self.session = requests.Session()
+        self.session.headers.update({'User-Agent': 'OSINT-Pipeline-GeoCorrelator/1.0'})
 
     def _is_valid_ip(self, ip_address: str) -> bool:
-        """Validate IP address format"""
+        """Validates if a string is a correct IPv4 address."""
         try:
             socket.inet_aton(ip_address)
             return True
         except socket.error:
             return False
 
-    def _analyze_geolocation(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        analysis = {
-            "geolocation": {},
-            "risk_factors": [],
-            "is_high_risk_country": False
-        }
+    def correlate_ip(self, ip_address: str) -> Dict[str, Any]:
+        """Correlates geolocation data for a single IP address."""
+        if not self._is_valid_ip(ip_address):
+            logger.warning(f"Invalid IP address format, skipping: {ip_address}")
+            return {"ip_address": ip_address, "error": "Invalid IP format"}
 
-        # Extract geolocation data
-        if "ipapi" in data and data["ipapi"]:
-            ipapi_data = data["ipapi"]
-            country = ipapi_data.get("country", "unknown")
-            analysis["geolocation"] = {
-                "country": country,
-                "city": ipapi_data.get("city", "unknown"),
-                "isp": ipapi_data.get("isp", "unknown")
-            }
+        if self.use_mock_data:
+            logger.info(f"Using mock data for IP: {ip_address}")
+            return self._get_mock_data(ip_address)
+            
+        result = {'ip_address': ip_address, 'timestamp': datetime.now().isoformat()}
+        
+        try:
+            time.sleep(1.5) # Rate limit
+            response = self.session.get(f"{self.IPAPI_URL}{ip_address}", timeout=15)
+            response.raise_for_status()
+            data = response.json()
 
-            # High-risk country check
-            if country in self.HIGH_RISK_COUNTRIES:
-                analysis["is_high_risk_country"] = True
-                analysis["risk_factors"].append("Located in high-risk country")
+            if data.get('status') == 'success':
+                result['geolocation'] = {
+                    'country_code': data.get('countryCode'),
+                    'country_name': data.get('country'),
+                    'city': data.get('city'),
+                    'isp': data.get('isp'),
+                    'org': data.get('org')
+                }
+                result['analysis'] = self._analyze_geolocation(result['geolocation'])
+            else:
+                result['error'] = data.get('message', 'Failed to geolocate IP')
 
+        except requests.RequestException as e:
+            logger.error(f"API query failed for {ip_address}: {e}")
+            result['error'] = str(e)
+            
+        return result
+
+    def _analyze_geolocation(self, geo_data: Dict) -> Dict:
+        """Analyzes the collected geolocation data for risk factors."""
+        analysis = {"risk_factors": []}
+        
+        # High-risk country check
+        country_code = geo_data.get('country_code')
+        if country_code and country_code in self.HIGH_RISK_COUNTRIES:
+            analysis['risk_factors'].append(f"Located in high-risk country: {country_code}")
+            
+        # VPN/Proxy provider check
+        isp_name = geo_data.get('isp', '').lower()
+        if any(vpn in isp_name for vpn in self.VPN_PROVIDERS):
+            analysis['risk_factors'].append("ISP is a known VPN/Proxy provider.")
+            
+        if not analysis['risk_factors']:
+            analysis['risk_factors'].append("No obvious geographic risk factors detected.")
+            
         return analysis
 
-
-def send_to_webhook(data: List[Dict[str, Any]]):
-    """Sends the geolocation analysis results to the n8n webhook."""
-    # Use the URL from the class instance if available
-    # This handles the case where config might not be loaded
-    webhook_url = GeolocationCorrelator().webhook_url
-    if not webhook_url:
-        logger.warning("Webhook URL for 'geo-correlation' not configured. Skipping.")
-        return False
-    try:
-        payload = {
+    def _get_mock_data(self, ip_address: str) -> Dict:
+        """Generates mock data for testing."""
+        is_risky = ip_address.startswith("195")
+        mock = {
+            "ip_address": ip_address,
             "timestamp": datetime.now().isoformat(),
-            "feature": "Geolocation Correlation",
-            "results_count": len(data),
-            "results": data
+            "data_sources": ["mock_ipapi"],
+            "geolocation": {
+                "country_code": "RU" if is_risky else "US",
+                "country_name": "Russia" if is_risky else "United States",
+                "city": "Moscow" if is_risky else "Mountain View",
+                "isp": "Mock Hosting Provider" if is_risky else "Google LLC",
+                "org": "Mock Org" if is_risky else "Google"
+            }
         }
-        response = requests.post(webhook_url, json=payload, timeout=20)
-        response.raise_for_status()
-        logger.info(f"✅ Successfully sent {len(data)} geolocation reports to webhook.")
-        return True
-    except requests.exceptions.RequestException as e:
-        logger.error(f"❌ Failed to send data to webhook: {e}")
-        return False
+        mock['analysis'] = self._analyze_geolocation(mock['geolocation'])
+        return mock
 
+def save_results(data: List[Dict]):
+    """Saves the correlation results to a JSON file."""
+    if not data:
+        logger.warning("No correlation results to save.")
+        return
+        
+    try:
+        output_dir = os.path.join(os.path.dirname(__file__), '..', 'output')
+        os.makedirs(output_dir, exist_ok=True)
+        output_file = os.path.join(output_dir, 'feature_10_geolocation_correlation.json')
+        
+        final_payload = {
+            "feature_name": "Geolocation Correlation",
+            "execution_timestamp": datetime.now().isoformat(),
+            "ips_analyzed": len(data),
+            "correlation_results": data
+        }
 
+        with open(output_file, 'w', encoding='utf-8') as f:
+            json.dump(final_payload, f, indent=4, ensure_ascii=False)
+            
+        logger.info(f"💾 Results successfully saved to: {output_file}")
+    except Exception as e:
+        logger.error(f"❌ ERROR: Failed to save results to file: {e}")
 
-# Main Function
-if __name__ == "__main__":
-    sample_ips = ["8.8.8.8", "104.26.10.231", "195.154.225.107"] # Google, Cloudflare, Russia
+def main():
+    """Main execution function for the Geolocation Correlator."""
+    logger.info("🚀 Starting Feature 10: Geolocation Correlation...")
     
-    # Load API keys from config/environment
-    shodan_key = get_api_key("shodan") if CONFIG_AVAILABLE else None
+    # In a real pipeline, this would come from a file (e.g., IOC extractor output)
+    sample_ips = ["8.8.8.8", "1.1.1.1", "195.154.225.107", "89.248.167.143"]  # Google, Cloudflare, Russia, NordVPN
     
-    correlator = GeolocationCorrelator(shodan_api_key=shodan_key)
+    # Using mock data if API keys for other services are not present
+    # This feature itself doesn't need a key, but we can use the existence of other keys to decide
+    use_mock = not get_api_key("shodan") 
+    
+    correlator = GeolocationCorrelator(use_mock_data=use_mock)
     
     all_results = []
-    print(f"🚀 Starting geolocation correlation for {len(sample_ips)} IPs...")
+    logger.info(f"Analyzing {len(sample_ips)} IPs...")
     
     for ip in sample_ips:
-        try:
-            print(f"\n--- Correlating IP: {ip} ---")
-            result = correlator.correlate_geolocation(ip)
-            all_results.append(result)
-            print(json.dumps(result, indent=2))
-            time.sleep(1) # Rate limit
-            
-        except GeolocationCorrelationError as e:
-            print(f"❗️ Could not correlate IP {ip}: {e}")
-
+        logger.info(f"--- Correlating IP: {ip} ---")
+        result = correlator.correlate_ip(ip)
+        all_results.append(result)
+        print(json.dumps(result, indent=2))
+        
     if all_results:
-        send_to_webhook(all_results)
-    else:
-        print("No results to send to webhook.")
+        save_results(all_results)
+    
+    logger.info("✅ Geolocation correlation complete.")
 
-    print("\n✅ Geolocation correlation complete.")
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,15 @@
+# Core Dependencies
+requests[socks]
+beautifulsoup4
+stem
+
+# Feature 7: NER
+spacy
+
+# Feature 12: Behavioral Analysis
+textblob
+
+# Optional but recommended for some scripts
+python-dotenv
+validators
+python-dateutil
