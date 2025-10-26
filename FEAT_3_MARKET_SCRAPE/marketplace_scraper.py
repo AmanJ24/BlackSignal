@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 
 # --- CONFIGURATION ---
 # In a real pipeline, you would pass this URL as an argument
-TARGET_URL = "http://duskgytldkxiuqc6.onion/" # Example: Dread Forum
+TARGET_URL = "http://dreadytofatroptsdj6io7l3xptbet6onoyno2yv7jicoxknyazubrad.onion/d/Locker01" # Example: Dread Forum
 
 # Request headers to appear more like a regular browser
 HEADERS = {

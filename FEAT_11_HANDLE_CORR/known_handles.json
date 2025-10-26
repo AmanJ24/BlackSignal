@@ -1,0 +1,17 @@
+{
+  "ShinyHunters": {
+    "risk": "High",
+    "groups": ["Data Breach Seller"],
+    "notes": "Known for selling large user databases from major company breaches."
+  },
+  "LockBit": {
+    "risk": "Critical",
+    "groups": ["Ransomware-as-a-Service", "LockBit 3.0"],
+    "notes": "One of the most prolific RaaS gangs."
+  },
+  "Gnosticplayers": {
+    "risk": "High",
+    "groups": ["Data Breach Broker"],
+    "notes": "Famous for compiling and selling collections of breached data."
+  }
+}

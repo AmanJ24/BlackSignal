@@ -1,0 +1,17 @@
+[
+  {
+    "id": "T1566",
+    "technique": "Phishing",
+    "keywords": ["phishing", "spear-phishing", "whaling", "credential harvesting"]
+  },
+  {
+    "id": "T1003",
+    "technique": "OS Credential Dumping",
+    "keywords": ["credential dumping", "password dump", "lsass", "mimikatz", "SAM dump"]
+  },
+  {
+    "id": "T1219",
+    "technique": "Remote Access Software",
+    "keywords": ["AnyDesk", "TeamViewer", "VNC", "RDP", "Remote Desktop"]
+  }
+]

@@ -40,17 +40,9 @@ class MitreAttackMapper:
     def _load_attack_data(self) -> List[Dict]:
         """Loads the MITRE ATT&CK dataset from a local JSON file."""
         if not os.path.exists(self.dataset_file):
-            logger.error(f"Dataset file '{self.dataset_file}' not found.")
-            # Create a dummy file for testing purposes
-            logger.warning("Creating a dummy MITRE dataset for testing.")
-            dummy_data = [
-                {"id": "T1566", "technique": "Phishing", "keywords": [r'spear-phishing', r'phishing']},
-                {"id": "T1003", "technique": "OS Credential Dumping", "keywords": [r'credential dump', r'password dump', r'lsass']},
-                {"id": "T1059", "technique": "Command and Scripting Interpreter", "keywords": [r'powershell', r'bash', r'cmd\.exe']}
-            ]
-            with open(self.dataset_file, 'w') as f:
-                json.dump(dummy_data, f, indent=2)
-            return dummy_data
+            # --- REMOVE DUMMY DATA CREATION ---
+            logger.critical(f"CRITICAL: MITRE dataset '{self.dataset_file}' not found. This feature cannot run.")
+            raise FileNotFoundError(f"'{self.dataset_file}' is required for MITRE mapping.")
         
         with open(self.dataset_file, 'r', encoding='utf-8') as f:
             return json.load(f)

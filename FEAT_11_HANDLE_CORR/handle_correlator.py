@@ -39,24 +39,17 @@ class HandleCorrelator:
 
     def _load_known_handles(self) -> Dict[str, Any]:
         """Loads the known handles database from a JSON file."""
-        # For a local pipeline, the database should be in the feature directory.
         db_path = os.path.join(os.path.dirname(__file__), self.known_handles_path)
         if not os.path.exists(db_path):
-            logger.warning(f"'{self.known_handles_path}' not found. Creating a dummy file for testing.")
-            dummy_handles = {
-                "Gnosticplayers": {"risk": "High", "groups": ["Data Breach Broker"]},
-                "ShinyHunters": {"risk": "High", "groups": ["Data Breach Seller", "Shiny Hunters"]},
-                "LulzSec": {"risk": "Critical", "groups": ["Hacktivist"]}
-            }
-            with open(db_path, 'w') as f:
-                json.dump(dummy_handles, f, indent=2)
-            return dummy_handles
+            logger.critical(f"CRITICAL: Handle database '{self.known_handles_path}' not found. This feature cannot run.")
+            raise FileNotFoundError(f"'{self.known_handles_path}' is required for handle correlation.")
         try:
-            with open(db_path, 'r') as file:
+            with open(db_path, 'r', encoding='utf-8') as file:
                 return json.load(file)
         except json.JSONDecodeError as e:
             logger.error(f"Error decoding JSON from {self.known_handles_path}: {e}")
             return {}
+
 
     def correlate_handles(self, handles: List[str]) -> List[Dict]:
         """Correlates a list of handles against the known database."""
