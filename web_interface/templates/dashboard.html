@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - Dark Web OSINT{% endblock %}
+{% block content %}
+<div x-data="dashboard()" x-init="init()">
+    <div class="px-4 sm:px-0 mb-8">
+        <h1 class="text-3xl font-semibold text-gray-900">Workflow Dashboard</h1>
+        <p class="mt-2 text-sm text-gray-600">Automated intelligence pipeline orchestration</p>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="px-4 sm:px-0 mb-8">
+        <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="overflow-hidden rounded-lg bg-white shadow border border-gray-100">
+                <div class="p-6">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-50">
+                                <i data-lucide="globe" class="h-6 w-6 text-blue-600"></i>
+                            </div>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="truncate text-sm font-medium text-gray-500">Domains Discovered</dt>
+                                <dd class="mt-1 text-3xl font-semibold tracking-tight text-gray-900" x-text="stats.total_domains"></dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="overflow-hidden rounded-lg bg-white shadow border border-gray-100">
+                <div class="p-6">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-red-50">
+                                <i data-lucide="shield-alert" class="h-6 w-6 text-red-600"></i>
+                            </div>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="truncate text-sm font-medium text-gray-500">IOCs Extracted</dt>
+                                <dd class="mt-1 text-3xl font-semibold tracking-tight text-gray-900" x-text="stats.total_iocs"></dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="overflow-hidden rounded-lg bg-white shadow border border-gray-100">
+                <div class="p-6">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-green-50">
+                                <i data-lucide="check-circle" class="h-6 w-6 text-green-600"></i>
+                            </div>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="truncate text-sm font-medium text-gray-500">Features Executed</dt>
+                                <dd class="mt-1 text-3xl font-semibold tracking-tight text-gray-900" x-text="stats.features_run"></dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="overflow-hidden rounded-lg bg-white shadow border border-gray-100">
+                <div class="p-6">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-purple-50">
+                                <i data-lucide="workflow" class="h-6 w-6 text-purple-600"></i>
+                            </div>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="truncate text-sm font-medium text-gray-500">Pipelines Run</dt>
+                                <dd class="mt-1 text-3xl font-semibold tracking-tight text-gray-900" x-text="stats.pipelines_executed"></dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pipeline Control -->
+    <div class="px-4 sm:px-0 mb-8">
+        <div class="overflow-hidden rounded-lg bg-white shadow border border-gray-100">
+            <div class="p-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Pipeline Execution</h2>
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex-1">
+                        <p class="text-sm text-gray-600 mb-2">Run the complete OSINT workflow with one click</p>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-blue-600 h-2 rounded-full transition-all duration-500" :style="`width: ${pipelineProgress}%`"></div>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1" x-show="pipelineRunning" x-text="`Progress: ${pipelineProgress}%`"></p>
+                    </div>
+                    <button @click="runFullPipeline()" :disabled="pipelineRunning"
+                            class="ml-6 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium">
+                        <span x-show="!pipelineRunning">Run Full Pipeline</span>
+                        <span x-show="pipelineRunning">Running...</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pipeline Stages -->
+    <div class="px-4 sm:px-0">
+        <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <template x-for="(stage, stageId) in stages" :key="stageId">
+                <div class="overflow-hidden rounded-lg bg-white shadow border border-gray-100 hover:shadow-md transition-all">
+                    <div class="p-6">
+                        <h3 class="text-sm font-semibold text-gray-900 mb-2" x-text="stage.name"></h3>
+                        <p class="text-xs text-gray-500 mb-4" x-text="stage.description"></p>
+                        <div class="text-xs text-gray-400 mb-3">
+                            <span x-text="stage.features.length"></span> features
+                        </div>
+                        <button @click="runStage(stageId)" :disabled="pipelineRunning"
+                                class="w-full px-4 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50">
+                            Run Stage
+                        </button>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+function dashboard() {
+    return {
+        stats: {{ stats | tojson }},
+        stages: {{ stages | tojson }},
+        pipelineRunning: false,
+        pipelineProgress: 0,
+        socket: null,
+
+        init() {
+            this.connectSocket();
+            this.loadStats();
+            setInterval(() => this.loadStats(), 5000);
+            lucide.createIcons();
+        },
+
+        connectSocket() {
+            this.socket = io();
+            this.socket.on('pipeline_progress', (data) => {
+                this.pipelineProgress = data.progress;
+            });
+            this.socket.on('pipeline_complete', () => {
+                this.pipelineRunning = false;
+                this.pipelineProgress = 100;
+                this.loadStats();
+            });
+        },
+
+        async loadStats() {
+            try {
+                const response = await fetch('/api/stats');
+                this.stats = await response.json();
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        },
+
+        async runFullPipeline() {
+            this.pipelineRunning = true;
+            this.pipelineProgress = 0;
+            try {
+                await fetch('/api/pipeline/run', { method: 'POST' });
+            } catch (error) {
+                console.error('Error running pipeline:', error);
+                this.pipelineRunning = false;
+            }
+        },
+
+        async runStage(stageId) {
+            try {
+                await fetch(`/api/pipeline/stage/${stageId}/run`, { method: 'POST' });
+            } catch (error) {
+                console.error('Error running stage:', error);
+            }
+        }
+    };
+}
+</script>
+{% endblock %}

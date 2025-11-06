@@ -1,0 +1,15 @@
+# Web Interface Requirements for Dark Web OSINT Dashboard
+
+# Core Flask
+Flask==3.0.0
+Werkzeug==3.0.1
+
+# WebSocket support for real-time updates
+flask-socketio==5.3.5
+python-socketio==5.10.0
+
+# CORS support
+flask-cors==4.0.0
+
+# Additional utilities
+python-dateutil==2.8.2

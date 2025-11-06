@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+
+{% block title %}Features - Dark Web OSINT{% endblock %}
+
+{% block content %}
+<div x-data="featuresPage()" x-init="init()">
+    <!-- Page Header -->
+    <div class="px-4 sm:px-0 mb-8">
+        <h1 class="text-3xl font-semibold text-gray-900">OSINT Features</h1>
+        <p class="mt-2 text-sm text-gray-600">15 automated intelligence gathering tools</p>
+    </div>
+
+    <!-- Features Grid -->
+    <div class="px-4 sm:px-0">
+        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <template x-for="feature in features" :key="feature.id">
+                <div class="overflow-hidden rounded-lg bg-white shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200">
+                    <div class="p-6">
+                        <!-- Header -->
+                        <div class="flex items-start justify-between mb-4">
+                            <div class="flex items-center space-x-3">
+                                <span class="text-3xl" x-text="feature.icon"></span>
+                                <div>
+                                    <h3 class="text-sm font-semibold text-gray-900" x-text="feature.name"></h3>
+                                    <p class="text-xs text-gray-500 mt-1" x-text="feature.description"></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Status Badge -->
+                        <div class="mb-4">
+                            <span
+                                :class="{
+                                    'bg-green-50 text-green-700 border-green-200': feature.status === 'completed',
+                                    'bg-blue-50 text-blue-700 border-blue-200': feature.status === 'running',
+                                    'bg-gray-50 text-gray-700 border-gray-200': feature.status === 'idle',
+                                    'bg-red-50 text-red-700 border-red-200': feature.status === 'failed'
+                                }"
+                                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border">
+                                <template x-if="feature.status === 'running'">
+                                    <svg class="animate-spin -ml-0.5 mr-1.5 h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                </template>
+                                <span x-text="feature.status.charAt(0).toUpperCase() + feature.status.slice(1)"></span>
+                            </span>
+                        </div>
+
+                        <!-- Last Run -->
+                        <div class="mb-4" x-show="feature.last_run">
+                            <p class="text-xs text-gray-500">
+                                Last run: <span x-text="formatLastRun(feature.last_run)"></span>
+                            </p>
+                        </div>
+
+                        <!-- Run Button -->
+                        <button
+                            @click="runFeature(feature.id)"
+                            :disabled="feature.status === 'running'"
+                            :class="{
+                                'bg-blue-600 hover:bg-blue-700': feature.status !== 'running',
+                                'bg-gray-400 cursor-not-allowed': feature.status === 'running'
+                            }"
+                            class="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all">
+                            <template x-if="feature.status === 'running'">
+                                <span>Running...</span>
+                            </template>
+                            <template x-if="feature.status !== 'running'">
+                                <span class="flex items-center">
+                                    <i data-lucide="play" class="h-4 w-4 mr-2"></i>
+                                    Run Feature
+                                </span>
+                            </template>
+                        </button>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div
+        x-show="showToast"
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0 transform translate-y-2"
+        x-transition:enter-end="opacity-100 transform translate-y-0"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100 transform translate-y-0"
+        x-transition:leave-end="opacity-0 transform translate-y-2"
+        class="fixed bottom-4 right-4 max-w-sm w-full bg-white shadow-lg rounded-lg border border-gray-200 pointer-events-auto">
+        <div class="p-4">
+            <div class="flex items-start">
+                <div class="flex-shrink-0">
+                    <i data-lucide="check-circle" class="h-6 w-6 text-green-500"></i>
+                </div>
+                <div class="ml-3 w-0 flex-1 pt-0.5">
+                    <p class="text-sm font-medium text-gray-900" x-text="toastMessage"></p>
+                </div>
+                <div class="ml-4 flex flex-shrink-0">
+                    <button @click="showToast = false" class="inline-flex rounded-md text-gray-400 hover:text-gray-500 focus:outline-none">
+                        <i data-lucide="x" class="h-5 w-5"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function featuresPage() {
+        return {
+            features: {{ features | tojson }},
+            showToast: false,
+            toastMessage: '',
+            socket: null,
+
+            init() {
+                this.connectSocket();
+                this.loadFeatures();
+                setInterval(() => this.loadFeatures(), 3000);
+                lucide.createIcons();
+            },
+
+            connectSocket() {
+                this.socket = io();
+
+                this.socket.on('connect', () => {
+                    console.log('WebSocket connected');
+                });
+
+                this.socket.on('feature_update', (data) => {
+                    // Update feature in list
+                    const index = this.features.findIndex(f => f.id === data.feature.id);
+                    if (index !== -1) {
+                        this.features[index] = data.feature;
+                        this.$nextTick(() => lucide.createIcons());
+                    }
+                });
+            },
+
+            async loadFeatures() {
+                try {
+                    const response = await fetch('/api/features');
+                    const features = await response.json();
+
+                    // Update features while preserving reactivity
+                    features.forEach((feature, index) => {
+                        if (this.features[index]) {
+                            this.features[index].status = feature.status;
+                            this.features[index].last_run = feature.last_run;
+                        }
+                    });
+
+                    this.$nextTick(() => lucide.createIcons());
+                } catch (error) {
+                    console.error('Error loading features:', error);
+                }
+            },
+
+            async runFeature(featureId) {
+                try {
+                    const response = await fetch(`/api/features/${featureId}/run`, {
+                        method: 'POST'
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        this.showToastNotification(`${data.feature.name} started successfully`);
+                        this.loadFeatures();
+                    } else {
+                        this.showToastNotification('Failed to start feature', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error running feature:', error);
+                    this.showToastNotification('Error starting feature', 'error');
+                }
+            },
+
+            showToastNotification(message, type = 'success') {
+                this.toastMessage = message;
+                this.showToast = true;
+                setTimeout(() => {
+                    this.showToast = false;
+                }, 3000);
+                this.$nextTick(() => lucide.createIcons());
+            },
+
+            formatLastRun(timestamp) {
+                if (!timestamp) return 'Never';
+
+                const date = new Date(timestamp);
+                const now = new Date();
+                const diff = Math.floor((now - date) / 1000);
+
+                if (diff < 60) return 'just now';
+                if (diff < 3600) return `${Math.floor(diff / 60)} minutes ago`;
+                if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
+
+                return date.toLocaleString();
+            }
+        };
+    }
+</script>
+{% endblock %}

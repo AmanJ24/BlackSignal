@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Pipeline - Dark Web OSINT{% endblock %}
+{% block content %}
+<div class="px-4 sm:px-0">
+    <h1 class="text-3xl font-semibold text-gray-900 mb-2">OSINT Pipeline</h1>
+    <p class="text-sm text-gray-600 mb-8">Visual workflow with 4 stages and 15 automated features</p>
+
+    <div class="space-y-8">
+        {% for stage_id, stage in stages.items() %}
+        <div class="bg-white rounded-lg shadow border border-gray-100 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h2 class="text-xl font-semibold text-gray-900">{{ stage.name }}</h2>
+                    <p class="text-sm text-gray-500">{{ stage.description }}</p>
+                </div>
+                <button onclick="runStage('{{ stage_id }}')"
+                        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-medium">
+                    Run This Stage
+                </button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {% for feature_id in stage.features %}
+                {% set feature = features[feature_id] %}
+                <div class="border border-gray-200 rounded p-4">
+                    <h3 class="font-medium text-sm text-gray-900 mb-1">{{ feature.name }}</h3>
+                    <p class="text-xs text-gray-500 mb-2">{{ feature.description }}</p>
+                    {% if feature.depends_on %}
+                    <p class="text-xs text-gray-400">Depends on: {{ feature.depends_on | length }} features</p>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+async function runStage(stageId) {
+    try {
+        await fetch(`/api/pipeline/stage/${stageId}/run`, { method: 'POST' });
+        alert('Stage execution started. Check logs for progress.');
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Failed to start stage');
+    }
+}
+</script>
+{% endblock %}

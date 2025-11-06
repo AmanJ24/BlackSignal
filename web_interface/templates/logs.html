@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}Logs - Dark Web OSINT{% endblock %}
+{% block content %}
+<div x-data="logsPage()" x-init="init()">
+    <div class="px-4 sm:px-0 mb-8">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-semibold text-gray-900">Live Logs</h1>
+                <p class="mt-2 text-sm text-gray-600">Real-time pipeline execution monitoring</p>
+            </div>
+            <div class="flex items-center space-x-3">
+                <button @click="autoscroll = !autoscroll"
+                        :class="autoscroll ? 'bg-blue-600 text-white' : 'bg-white text-gray-700'"
+                        class="px-3 py-2 border border-gray-300 text-sm rounded hover:bg-blue-700">
+                    Auto-scroll
+                </button>
+                <button @click="clearLogs()" class="px-3 py-2 border border-gray-300 text-sm rounded text-gray-700 bg-white hover:bg-gray-50">
+                    Clear
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="px-4 sm:px-0 mb-6">
+        <div class="flex items-center space-x-3">
+            <button @click="filterLevel = 'all'" :class="filterLevel === 'all' ? 'bg-gray-900 text-white' : 'bg-white text-gray-700'"
+                    class="px-3 py-1.5 border text-sm rounded">All</button>
+            <button @click="filterLevel = 'info'" :class="filterLevel === 'info' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700'"
+                    class="px-3 py-1.5 border text-sm rounded">Info</button>
+            <button @click="filterLevel = 'success'" :class="filterLevel === 'success' ? 'bg-green-600 text-white' : 'bg-white text-gray-700'"
+                    class="px-3 py-1.5 border text-sm rounded">Success</button>
+            <button @click="filterLevel = 'error'" :class="filterLevel === 'error' ? 'bg-red-600 text-white' : 'bg-white text-gray-700'"
+                    class="px-3 py-1.5 border text-sm rounded">Error</button>
+        </div>
+    </div>
+
+    <div class="px-4 sm:px-0">
+        <div class="rounded-lg bg-gray-900 shadow-lg border border-gray-800">
+            <div class="p-4">
+                <div x-ref="logsContainer" class="h-[600px] overflow-y-auto font-mono text-sm space-y-1">
+                    <template x-for="(log, index) in filteredLogs" :key="index">
+                        <div :class="{
+                                'text-blue-400': log.level === 'info',
+                                'text-green-400': log.level === 'success',
+                                'text-red-400': log.level === 'error',
+                                'text-gray-400': log.level === 'default'
+                            }" class="flex items-start space-x-3 py-1 px-2 hover:bg-gray-800 rounded">
+                            <span class="text-gray-500 flex-shrink-0" x-text="formatTime(log.timestamp)"></span>
+                            <span :class="{
+                                    'bg-blue-500': log.level === 'info',
+                                    'bg-green-500': log.level === 'success',
+                                    'bg-red-500': log.level === 'error',
+                                    'bg-gray-500': log.level === 'default'
+                                }" class="h-1.5 w-1.5 rounded-full mt-1.5"></span>
+                            <span class="flex-1" x-text="log.message"></span>
+                        </div>
+                    </template>
+                    <template x-if="filteredLogs.length === 0">
+                        <div class="flex items-center justify-center h-full text-gray-500">
+                            <p>No logs yet. Run pipeline to see activity.</p>
+                        </div>
+                    </template>
+                </div>
+            </div>
+            <div class="bg-gray-800 px-4 py-2 border-t border-gray-700">
+                <div class="flex items-center justify-between text-xs text-gray-400">
+                    <span>WebSocket Connected</span>
+                    <span x-text="`${filteredLogs.length} logs`"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function logsPage() {
+    return {
+        logs: [],
+        filteredLogs: [],
+        filterLevel: 'all',
+        autoscroll: true,
+        socket: null,
+
+        init() {
+            this.connectSocket();
+            lucide.createIcons();
+            this.$watch('filterLevel', () => this.applyFilter());
+        },
+
+        connectSocket() {
+            this.socket = io();
+            this.socket.on('log_message', (log) => {
+                this.logs.push(log);
+                this.applyFilter();
+                if (this.autoscroll) {
+                    this.$nextTick(() => {
+                        const container = this.$refs.logsContainer;
+                        if (container) container.scrollTop = container.scrollHeight;
+                    });
+                }
+            });
+            this.socket.on('recent_logs', (recentLogs) => {
+                this.logs = recentLogs;
+                this.applyFilter();
+            });
+            this.socket.emit('request_logs');
+        },
+
+        applyFilter() {
+            if (this.filterLevel === 'all') {
+                this.filteredLogs = this.logs;
+            } else {
+                this.filteredLogs = this.logs.filter(log => log.level === this.filterLevel);
+            }
+        },
+
+        clearLogs() {
+            if (confirm('Clear all logs?')) {
+                this.logs = [];
+                this.filteredLogs = [];
+            }
+        },
+
+        formatTime(timestamp) {
+            return new Date(timestamp).toLocaleTimeString('en-US', { hour12: false });
+        }
+    };
+}
+</script>
+{% endblock %}

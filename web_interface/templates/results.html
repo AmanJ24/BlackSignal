@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}Results - Dark Web OSINT{% endblock %}
+{% block content %}
+<div x-data="resultsPage()" x-init="init()">
+    <div class="px-4 sm:px-0 mb-8">
+        <h1 class="text-3xl font-semibold text-gray-900">Results</h1>
+        <p class="mt-2 text-sm text-gray-600">View collected intelligence data</p>
+    </div>
+
+    <div class="px-4 sm:px-0 mb-6">
+        <div class="border-b border-gray-200">
+            <nav class="-mb-px flex space-x-8">
+                <button @click="activeTab = 'onion_domains'"
+                        :class="activeTab === 'onion_domains' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:border-gray-300'"
+                        class="whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium">
+                    Onion Domains
+                </button>
+                <button @click="activeTab = 'iocs'"
+                        :class="activeTab === 'iocs' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500'"
+                        class="whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium">
+                    IOCs
+                </button>
+                <button @click="activeTab = 'marketplace_data'"
+                        :class="activeTab === 'marketplace_data' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500'"
+                        class="whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium">
+                    Marketplace
+                </button>
+                <button @click="activeTab = 'enriched_data'"
+                        :class="activeTab === 'enriched_data' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500'"
+                        class="whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium">
+                    Enriched
+                </button>
+            </nav>
+        </div>
+    </div>
+
+    <div class="px-4 sm:px-0">
+        <div class="bg-white rounded-lg shadow border border-gray-100 p-6">
+            <div class="flex justify-between mb-4">
+                <input type="text" x-model="searchQuery" placeholder="Search..." class="px-3 py-2 border border-gray-300 rounded text-sm w-64">
+                <button @click="exportData()" class="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">Export JSON</button>
+            </div>
+
+            <div x-show="activeTab === 'onion_domains'">
+                <template x-if="results.onion_domains && results.onion_domains.domains">
+                    <div>
+                        <p class="text-sm text-gray-600 mb-4">Found <span x-text="results.onion_domains.domains.length"></span> hidden services</p>
+                        <div class="space-y-2 max-h-96 overflow-y-auto">
+                            <template x-for="(domain, idx) in results.onion_domains.domains.slice(0, 50)" :key="idx">
+                                <div class="border-b border-gray-100 py-2">
+                                    <code class="text-sm text-gray-900" x-text="domain"></code>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+                <template x-if="!results.onion_domains || !results.onion_domains.domains">
+                    <p class="text-gray-500 text-center py-12">No domains discovered yet. Click "Load Mock Data" in the top nav.</p>
+                </template>
+            </div>
+
+            <div x-show="activeTab === 'iocs'">
+                <template x-if="results.iocs && results.iocs.iocs">
+                    <pre class="bg-gray-50 p-4 rounded text-xs overflow-x-auto" x-text="JSON.stringify(results.iocs, null, 2)"></pre>
+                </template>
+                <template x-if="!results.iocs || !results.iocs.iocs">
+                    <p class="text-gray-500 text-center py-12">No IOCs extracted yet. Click "Load Mock Data" in the top nav.</p>
+                </template>
+            </div>
+
+            <div x-show="activeTab === 'marketplace_data'">
+                <template x-if="results.marketplace_data && results.marketplace_data.scraped_data">
+                    <pre class="bg-gray-50 p-4 rounded text-xs overflow-x-auto" x-text="JSON.stringify(results.marketplace_data, null, 2)"></pre>
+                </template>
+                <template x-if="!results.marketplace_data || !results.marketplace_data.scraped_data">
+                    <p class="text-gray-500 text-center py-12">No marketplace data yet. Click "Load Mock Data" in the top nav.</p>
+                </template>
+            </div>
+
+            <div x-show="activeTab === 'enriched_data'">
+                <template x-if="results.enriched_data && results.enriched_data.enriched_data">
+                    <pre class="bg-gray-50 p-4 rounded text-xs overflow-x-auto" x-text="JSON.stringify(results.enriched_data, null, 2)"></pre>
+                </template>
+                <template x-if="!results.enriched_data || !results.enriched_data.enriched_data">
+                    <p class="text-gray-500 text-center py-12">No enriched data yet. Click "Load Mock Data" in the top nav.</p>
+                </template>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function resultsPage() {
+    return {
+        activeTab: 'onion_domains',
+        results: {{ results | tojson }},
+        searchQuery: '',
+
+        init() {
+            this.loadResults();
+            lucide.createIcons();
+        },
+
+        async loadResults() {
+            const types = ['onion_domains', 'iocs', 'marketplace_data', 'enriched_data'];
+            for (const type of types) {
+                try {
+                    const response = await fetch(`/api/results/${type}`);
+                    if (response.ok) this.results[type] = await response.json();
+                } catch (e) {}
+            }
+        },
+
+        exportData() {
+            const dataStr = JSON.stringify(this.results[this.activeTab], null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${this.activeTab}_${new Date().toISOString()}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+    };
+}
+</script>
+{% endblock %}
