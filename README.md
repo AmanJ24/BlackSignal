@@ -65,22 +65,8 @@ Each layer communicates only through explicit data artifacts and never mutates u
 
 ### Pipeline Flow
 
-```mermaid
-flowchart TD
-    TOR[Tor Network]
 
-    TOR --> COL["Collectors(Tor-facing)"]
-
-    COL -->|raw data| PROC["Processors(Extraction & Normalization)"]
-
-    PROC -->|normalized data| ENR["Enrichment(Context & Validation)"]
-
-    ENR -->|enriched evidence| ANL["Analysis(Reasoning & Profiling)"]
-
-    ANL -->|intelligence signals| SCORE[Intelligence Scoring]
-
-    SCORE --> UI[Web Dashboard / CLI]
-```
+![alt text](docs/images/architecture_flow.png)
 
 ---
 
@@ -89,18 +75,7 @@ flowchart TD
 Execution is coordinated by a **Python-native DAG engine**.
 Pipeline order and parallelism are defined explicitly, not inferred from directory names or script order.
 
-```mermaid
-flowchart LR
-    PIPE["Pipeline Engine(Async DAG)"]
-    REG[Stage Registry]
-    STATE[State Manager]
-
-    PIPE --> REG
-    PIPE --> STATE
-
-    REG --> STAGES[Pipeline Stages]
-    STATE --> STAGES
-```
+![alt text](docs/images/orchestration_flow.png)
 
 ---
 
@@ -109,15 +84,7 @@ flowchart LR
 All dark web access is routed through a single, controlled interface.
 No collector or scraper talks to the network directly.
 
-```mermaid
-flowchart TB
-    FEAT[Collectors / Scrapers]
-    TORCTL["Tor Manager(Circuit Isolation)"]
-    TORNET[Tor Network]
-
-    FEAT --> TORCTL
-    TORCTL --> TORNET
-```
+![alt text](docs/images/networking_boundary.png)
 
 If Tor connectivity is lost, the pipeline fails closed.
 There is no silent clearnet fallback.
@@ -128,17 +95,7 @@ There is no silent clearnet fallback.
 
 Data flows forward only and is stored in clearly separated layers.
 
-```mermaid
-flowchart LR
-    RAW[data/raw]
-    NORM[data/normalized]
-    ENR[data/enriched]
-    INTEL[data/intelligence]
-
-    RAW --> NORM
-    NORM --> ENR
-    ENR --> INTEL
-```
+![alt text](docs/images/data_lifecycle.png)
 
 This design enables replayability, auditability, and partial re-execution.
 
