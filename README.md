@@ -65,8 +65,9 @@ Each layer communicates only through explicit data artifacts and never mutates u
 
 ### Pipeline Flow
 
-
-![alt text](docs/images/architecture_flow.png)
+<p align="center">
+  <img src="docs/images/architecture_flow.png" width="400">
+</p>
 
 ---
 
@@ -84,7 +85,9 @@ Pipeline order and parallelism are defined explicitly, not inferred from directo
 All dark web access is routed through a single, controlled interface.
 No collector or scraper talks to the network directly.
 
-![alt text](docs/images/networking_boundary.png)
+<p align="center">
+  <img src="docs/images/network_boundary.png" width="400">
+</p>
 
 If Tor connectivity is lost, the pipeline fails closed.
 There is no silent clearnet fallback.
