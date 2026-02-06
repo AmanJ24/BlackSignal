@@ -69,13 +69,13 @@ Each layer communicates only through explicit data artifacts and never mutates u
 flowchart TD
     TOR[Tor Network]
 
-    TOR --> COL[Collectors(Tor-facing)]
+    TOR --> COL["Collectors(Tor-facing)"]
 
-    COL -->|raw data| PROC[Processors(Extraction & Normalization)]
+    COL -->|raw data| PROC["Processors(Extraction & Normalization)"]
 
-    PROC -->|normalized data| ENR[Enrichment(Context & Validation)]
+    PROC -->|normalized data| ENR["Enrichment(Context & Validation)"]
 
-    ENR -->|enriched evidence| ANL[Analysis(Reasoning & Profiling)]
+    ENR -->|enriched evidence| ANL["Analysis(Reasoning & Profiling)"]
 
     ANL -->|intelligence signals| SCORE[Intelligence Scoring]
 
@@ -91,7 +91,7 @@ Pipeline order and parallelism are defined explicitly, not inferred from directo
 
 ```mermaid
 flowchart LR
-    PIPE[Pipeline Engine(Async DAG)]
+    PIPE["Pipeline Engine(Async DAG)"]
     REG[Stage Registry]
     STATE[State Manager]
 
@@ -112,7 +112,7 @@ No collector or scraper talks to the network directly.
 ```mermaid
 flowchart TB
     FEAT[Collectors / Scrapers]
-    TORCTL[Tor Manager(Circuit Isolation)]
+    TORCTL["Tor Manager(Circuit Isolation)"]
     TORNET[Tor Network]
 
     FEAT --> TORCTL
