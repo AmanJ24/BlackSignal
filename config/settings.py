@@ -1,13 +1,18 @@
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 
 # Load secrets from .secrets.env
-load_dotenv(".secrets.env")
+BASE_DIR = Path(__file__).resolve().parent.parent
+ENV_PATH = BASE_DIR / ".secrets.env"
+load_dotenv(ENV_PATH)
 
 # --- PATHS ---
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA_DIR = os.path.join(BASE_DIR, "data")
-LOG_DIR = os.path.join(BASE_DIR, "logs")
+DATA_DIR = BASE_DIR / "data"
+LOG_DIR = BASE_DIR / "logs" 
+
+# Alias for Backward Compatibility
+OUTPUT_DIR = DATA_DIR
 
 # --- TOR SETTINGS ---
 TOR_CONTROL_PORT = int(os.getenv("TOR_CONTROL_PORT", 9051))
@@ -26,5 +31,5 @@ ONION_SEEDS = [
 ]
 
 MARKET_TARGETS = [
-    "https://duckduckgogg42ts72.onion/" # Example Safe Target
+    "https://duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion/" # Example Safe Target
 ]

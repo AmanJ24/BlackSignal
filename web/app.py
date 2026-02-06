@@ -90,7 +90,7 @@ def execute_pipeline_script():
     script_path = os.path.join(config.BASE_DIR, "orchestration", "run_pipeline.py")
     
     process = subprocess.Popen(
-        [sys.executable, script_path],
+        [sys.executable, 'u', script_path],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,

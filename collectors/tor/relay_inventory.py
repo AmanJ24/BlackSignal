@@ -4,26 +4,18 @@ import json
 import time
 import logging
 from datetime import datetime
+from pathlib import Path
 
-# Path adjustments for imports
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+sys.path.append(str(BASE_DIR))
 
 from core.tor.tor_manager import TorManager
-# Assuming config is moved to config/settings.py based on your structure
-# If it's still in root, change to 'import config'
-try:
-    from config import settings as config
-except ImportError:
-    import config
+import config.settings as config
 
 logger = logging.getLogger("RelayInventory")
 logging.basicConfig(level=logging.INFO)
 
 class RelayInventory:
-    """
-    Collects active Tor relay data (Entry, Middle, Exit nodes) directly from the Tor Consensus.
-    """
-
     def __init__(self):
         self.tm = TorManager(
             control_port=config.TOR_CONTROL_PORT,
@@ -35,10 +27,14 @@ class RelayInventory:
     def run(self):
         try:
             self.tm.connect()
+            
+            # Explicit check to satisfy type checker and runtime safety
+            if self.tm._controller is None:
+                raise RuntimeError("Tor Controller failed to initialize.")
+
             logger.info("📡 Fetching Tor Network Consensus...")
             
-            # Fetch all network statuses
-            # This is a heavy operation, returns thousands of relays
+            # Now safe to call
             relays = self.tm._controller.get_network_statuses()
             
             inventory = []
@@ -46,11 +42,7 @@ class RelayInventory:
                 inventory.append({
                     "fingerprint": relay.fingerprint,
                     "nickname": relay.nickname,
-                    "address": relay.address,
-                    "or_port": relay.or_port,
-                    "flags": list(relay.flags),
-                    "bandwidth": relay.bandwidth,
-                    "version": str(relay.version) if relay.version else "unknown"
+                    "address": relay.address
                 })
             
             logger.info(f"✅ Collected {len(inventory)} active relays.")
@@ -61,18 +53,11 @@ class RelayInventory:
 
     def _save_results(self, data):
         timestamp = datetime.utcnow().isoformat()
-        output = {
-            "meta": {
-                "feature": "relay_inventory",
-                "timestamp": timestamp,
-                "count": len(data)
-            },
-            "data": data
-        }
+        output = {"meta": {"feature": "relay_inventory", "timestamp": timestamp}, "data": data}
 
-        # Save to data/raw/
-        filename = f"tor_relays_{int(time.time())}.json"
-        filepath = os.path.join(config.BASE_DIR, "data", "raw", filename)
+        raw_dir = os.path.join(config.DATA_DIR, "raw")
+        os.makedirs(raw_dir, exist_ok=True)
+        filepath = os.path.join(raw_dir, f"tor_relays_{int(time.time())}.json")
         
         with open(filepath, 'w') as f:
             json.dump(output, f, indent=4)
@@ -80,5 +65,4 @@ class RelayInventory:
         logger.info(f"💾 Saved relay inventory to: {filepath}")
 
 if __name__ == "__main__":
-    collector = RelayInventory()
-    collector.run()
+    RelayInventory().run()

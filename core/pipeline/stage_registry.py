@@ -26,10 +26,7 @@ from analysis.handle_correlation import HandleCorrelation
 from analysis.reputation_analysis import ReputationAnalysis
 
 # Config for targets
-try:
-    from config import settings
-except ImportError:
-    import config as settings
+import config.settings as config
 
 @dataclass
 class PipelineStage:
