@@ -1,5 +1,0 @@
-requests
-OTXv2
-python-dotenv
-beautifulsoup4
-lxml

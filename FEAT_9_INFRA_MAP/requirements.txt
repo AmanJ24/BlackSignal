@@ -1,3 +1,0 @@
-requests>=2.31.0
-socket-utils>=0.1.0
-typing>=3.7.4

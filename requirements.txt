@@ -1,23 +1,25 @@
-# Main dependencies for OSINT Dark Web Automation Pipeline
+# --- Core Networking & Tor ---
+requests>=2.31.0
+requests[socks]>=2.31.0  # Required for SOCKS5 proxy support
+stem>=1.8.2              # Python controller library for Tor
+PySocks>=1.7.1
 
-# Core Python packages
-requests[socks]
-beautifulsoup4
-lxml
-python-dotenv
+# --- Web Framework ---
+Flask>=3.0.0
+Flask-SocketIO>=5.3.6
+Flask-CORS>=4.0.0
+simple-websocket>=1.0.0  # Modern WebSocket transport
+eventlet>=0.33.3         # Async worker for SocketIO (Production ready)
 
-# Flask for APIs
-flask
+# --- Parsing & Extraction ---
+beautifulsoup4>=4.12.2   # HTML parsing
+lxml>=4.9.3              # Fast parser backend
+regex>=2023.10.3         # Advanced regex support
 
-# Tor integration
-stem
-PySocks
+# --- NLP & Analysis ---
+spacy>=3.7.2             # Named Entity Recognition
+textblob>=0.17.1         # Sentiment Analysis
 
-# Threat Intelligence APIs
-OTXv2
-
-# HTTP handling
-urllib3
-
-# Data processing
-json
+# --- Utilities ---
+python-dotenv>=1.0.0     # Environment variable management
+urllib3>=2.0.7

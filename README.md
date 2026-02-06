@@ -1,208 +1,294 @@
-# 🕵️ OSINT & Threat Intel Automation Pipeline
+# 🕵️ Dark Web OSINT & Threat Intelligence Platform
 
-**A modular, automated Dark Web Monitoring and Threat Intelligence Pipeline built with Python microservices, n8n, and free-tier APIs.**
-
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Features](https://img.shields.io/badge/Features-15%2F15-brightgreen.svg)](https://github.com/AmanJ24/darkweb-osint-automater)
-[![Status](https://img.shields.io/badge/Status-Completed-blue.svg)](https://github.com/AmanJ24/darkweb-osint-automater)
+A modular, Tor-native pipeline for dark web intelligence collection, enrichment, analysis, and confidence-based threat scoring.
 
 ---
 
-## 📊 Project Status
+## Overview
 
-**Development Complete: 15 / 15 Features Implemented**
+This project is an **end-to-end OSINT and Threat Intelligence platform** designed to monitor dark web ecosystems, extract actionable indicators, enrich them with external intelligence, and generate analyst-ready threat assessments.
 
-This project has completed its core feature development. All 15 microservices are fully implemented and ready for integration into an automated workflow. The current focus is on building and refining the n8n orchestration pipeline.
+It is built as a **layered intelligence pipeline**, not a collection of scripts.
+Each stage has a clearly defined responsibility, strict data contracts, and explicit execution order controlled by a DAG-based pipeline engine.
 
----
-
-## 🔍 Overview
-
-This project is a **modular OSINT pipeline** designed for automated dark web monitoring and threat intelligence extraction. It leverages a powerful combination of Python-based microservices, orchestrated by the workflow automation tool **n8n**, to create a comprehensive and cost-effective monitoring solution.
-
--   **15 Core Features** for comprehensive data collection, enrichment, and analysis.
--   **Microservice Architecture** with standalone Python scripts for each feature.
--   **Tor Network Integration** for seamless and anonymous access to `.onion` sites.
--   **Multi-Source Enrichment** using a variety of free-tier threat intelligence APIs.
--   **Webhook-Driven** for a fully automated, event-driven data flow orchestrated by n8n.
--   **100% Free-Tier Implementation**, requiring no paid tools or subscriptions to operate.
+The system is designed to scale from **local research** to **SOC-style automation** without architectural changes.
 
 ---
 
-## ⚙️ How It Works: The Automation Pipeline
+## What This Project Does
 
-The project is not a single application but a collection of specialized tools designed to be chained together in an orchestration platform like n8n. The data flows through the pipeline, getting richer and more insightful at each step.
+At a high level, the platform answers one question:
 
-1.  **Trigger**: The pipeline starts with a trigger in n8n (e.g., a schedule that runs every 12 hours).
-2.  **Collection**: An n8n node calls a data collection script (e.g., **Onion Crawler** or **Marketplace Scraper**).
-3.  **Extraction**: The script runs and sends its raw text output to an n8n webhook. n8n then passes this text to the extraction services (**IOC Extractor**, **NER**, **Hash Extractor**).
-4.  **Enrichment**: The extracted IOCs (IPs, domains, hashes) are sent to the enrichment services (**API Enrichment**, **Infrastructure Mapper**, **Geolocation Correlator**).
-5.  **Analysis**: The fully enriched data and original posts are then sent to the final analysis services for deeper insights (**Behavioral Analysis**, **Reputation Scoring**, **MITRE ATT&CK Mapping**, **Affiliate Analysis**).
-6.  **Aggregation**: n8n receives the final, structured JSON reports and sends them to a destination, such as a database, a Google Sheet, or a security monitoring tool.
+> *What activity on the dark web is actually relevant, and how risky is it?*
 
----
+It does this through five distinct phases:
 
-## 🎆 Key Features
+### 1. Collection
 
-All 15 core features of the pipeline have been implemented and are fully operational:
+* Tor relay enumeration
+* `.onion` service discovery
+* Dark web marketplace scraping
+* STIX/TAXII threat feed ingestion
 
-### Core Data Collection
--   🌐 **Tor Relay Enumeration** - Discovers and lists active Tor network infrastructure.
--   🧅 **Automated .onion Discovery** - Recursively crawls hidden services to find new .onion domains.
--   🛍 **Marketplace Scraping** - Extracts vendor names, product listings, and prices from dark web marketplaces.
--   📄 **STIX/TAXII Integration** - Parses structured threat intelligence from TAXII feeds like Abuse.ch.
+### 2. Processing
 
-### Data Processing & Enrichment
--   🔎 **IOC Extraction** - Uses comprehensive regex patterns to extract a wide range of IOCs from raw text.
--   🧠 **Named Entity Recognition (NER)** - Identifies and extracts key entities like names, organizations, and locations.
--   🔍 **Hash Extraction & Analysis** - Detects malware hashes (MD5, SHA1, SHA256) and enriches them via VirusTotal.
--   📡 **API Enrichment** - Enriches IOCs with data from IP-API, BGPView, OTX, Shodan, and more.
+* IOC extraction (IPs, domains, wallets, hashes)
+* NLP-based named entity recognition
+* Normalization of unstructured text into machine-readable data
 
-### Analysis & Intelligence Generation
--   🌐 **Infrastructure Mapping** - Analyzes IP addresses to identify hosting providers, open ports, and potential C2 servers.
--   🌍 **Geolocation Correlation** - Correlates multiple IPs to identify geographic patterns and high-risk locations.
--   🔗 **Handle Correlation** - Tracks and matches threat actor handles across different platforms and data sources.
--   📊 **Behavioral Analysis** - Analyzes vendor posting frequency, sentiment, and pricing to detect patterns.
--   🏆 **Reputation Scoring** - Calculates a reputation score for vendors based on feedback, transaction history, and age.
--   🎯 **MITRE ATT&CK TTP Mapping** - Links observed activities and keywords to specific MITRE ATT&CK techniques.
--   💰 **Affiliate Recruitment Analysis** - Detects Ransomware-as-a-Service (RaaS) structures by analyzing payment patterns and recruitment language.
+### 3. Enrichment
 
----
+* External intelligence correlation (VirusTotal, AbuseIPDB, Shodan, BGPView)
+* Infrastructure and geolocation analysis
+* Contextual metadata augmentation
 
-## 🧋 Tech Stack
+### 4. Analysis
 
-**Core Technologies:**
--   **Python 3.11+** (requests, stem, BeautifulSoup, Flask, spaCy, TextBlob)
--   **n8n Cloud** (Workflow automation & webhook integration)
--   **Tor Network** (SOCKS5 proxy for `.onion` access)
+* Behavioral profiling
+* Reputation estimation
+* MITRE ATT&CK technique mapping
+* Affiliate and RaaS structure detection
+* Handle and alias correlation
 
-**Free APIs & Services:**
--   IP-API, BGPView (Geolocation & network info)
--   AbuseIPDB, VirusTotal, Shodan (Threat intelligence)
--   OTX/AlienVault (Community threat feeds)
--   Abuse.ch (Malware and URLhaus feeds)
+### 5. Intelligence & Scoring
+
+* Aggregation of multi-source signals
+* Confidence-weighted threat scoring
+* Generation of structured intelligence artifacts
 
 ---
 
-## 📁 Project Structure
+## Architecture
 
-The project uses a clean, microservice-based architecture. Each feature is a self-contained module with its own dependencies, making it modular and easy to maintain.
+The platform follows a **layered, unidirectional pipeline architecture**.
+Each layer communicates only through explicit data artifacts and never mutates upstream data.
 
-```bash
-.
-├── config.py                     # Central configuration for API keys and webhooks
-├── docs/                         # Project documentation
-├── FEAT_1_TOR_RELAY/             # Feature 1: Tor relay enumeration
-│   └── tor_api.py
-│   └── requirements.txt
-├── FEAT_2_ONION_CRAWL/           # Feature 2: .onion domain discovery
-│   └── onion_domain_discovery.py
-│   └── requirements.txt
-├── ... (and so on for all 15 features) ...
-├── logs/                         # Centralized logging folder (ignored by git)
-├── output/                       # Local JSON output from scripts (ignored by git)
-├── .gitignore                    # Git ignore file
-├── README.md                     # This file
-└── .secrets.env.example          # Example file for storing API keys
+### Pipeline Flow
+
+```mermaid
+flowchart TD
+    TOR[Tor Network]
+
+    TOR --> COL[Collectors<br/>(Tor-facing)]
+
+    COL -->|raw data| PROC[Processors<br/>(Extraction & Normalization)]
+
+    PROC -->|normalized data| ENR[Enrichment<br/>(Context & Validation)]
+
+    ENR -->|enriched evidence| ANL[Analysis<br/>(Reasoning & Profiling)]
+
+    ANL -->|intelligence signals| SCORE[Intelligence Scoring]
+
+    SCORE --> UI[Web Dashboard / CLI]
 ```
 
 ---
 
-## 🚀 Getting Started
+### Orchestration & Control Plane
+
+Execution is coordinated by a **Python-native DAG engine**.
+Pipeline order and parallelism are defined explicitly, not inferred from directory names or script order.
+
+```mermaid
+flowchart LR
+    PIPE[Pipeline Engine<br/>(Async DAG)]
+    REG[Stage Registry]
+    STATE[State Manager]
+
+    PIPE --> REG
+    PIPE --> STATE
+
+    REG --> STAGES[Pipeline Stages]
+    STATE --> STAGES
+```
+
+---
+
+### Networking & Safety Boundary
+
+All dark web access is routed through a single, controlled interface.
+No collector or scraper talks to the network directly.
+
+```mermaid
+flowchart TB
+    FEAT[Collectors / Scrapers]
+    TORCTL[Tor Manager<br/>(Circuit Isolation)]
+    TORNET[Tor Network]
+
+    FEAT --> TORCTL
+    TORCTL --> TORNET
+```
+
+If Tor connectivity is lost, the pipeline fails closed.
+There is no silent clearnet fallback.
+
+---
+
+### Data Lifecycle
+
+Data flows forward only and is stored in clearly separated layers.
+
+```mermaid
+flowchart LR
+    RAW[data/raw]
+    NORM[data/normalized]
+    ENR[data/enriched]
+    INTEL[data/intelligence]
+
+    RAW --> NORM
+    NORM --> ENR
+    ENR --> INTEL
+```
+
+This design enables replayability, auditability, and partial re-execution.
+
+---
+
+## Project Structure
+
+```
+.
+├── core/                  # Brain: Tor manager, pipeline engine, scoring
+├── collectors/            # Tor-facing data collection
+├── processors/            # IOC & entity extraction
+├── enrichment/            # External intelligence correlation
+├── analysis/              # Behavioral and threat analysis
+├── orchestration/         # Pipeline entry points
+├── data/                  # raw → normalized → enriched → intelligence
+├── web/                   # Analyst dashboard
+├── docs/                  # Project documentation
+├── config/                # Runtime configuration
+└── README.md
+```
+
+Execution order is defined by the pipeline DAG, not by directory structure.
+
+---
+
+## Installation
 
 ### Prerequisites
--   **Python 3.11+**
--   **Tor Browser** or a running **Tor daemon**
--   **n8n Cloud Account** (the free tier is sufficient)
--   **Git**
 
-### Installation
+* Python **3.10+**
+* A running **Tor daemon**
 
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/AmanJ24/darkweb-osint-automater.git
-    cd darkweb-osint-automater
-    ```
+  * SOCKS proxy: `127.0.0.1:9050`
+  * Control port: `127.0.0.1:9051`
 
-2.  **Configure API Keys:**
-    -   Rename `.secrets.env.example` to `.secrets.env`.
-    -   Add your free API keys to the `.secrets.env` file. This file is ignored by Git to protect your secrets.
-    ```bash
-    # .secrets.env
-    VIRUSTOTAL_API_KEY=your_key_here
-    ABUSEIPDB_API_KEY=your_key_here
-    SHODAN_API_KEY=your_key_here
-    ```
+### Setup
 
-3.  **Configure Tor:**
-    -   Ensure the Tor service is running.
-    -   Verify that your `config.py` points to the correct SOCKS proxy (`127.0.0.1:9050`) and control port (`127.0.0.1:9051`).
+```bash
+git clone https://github.com/AmanJ24/BlackSignal
+cd BlackSignal
 
-### Running a Feature (Manual Testing)
+chmod +x setup.sh
+./setup.sh
+```
 
-Each feature can be tested individually.
+This script:
 
-1.  **Navigate to a feature directory:**
-    ```bash
-    cd FEAT_6_IOC_EXTRACT/
-    ```
-2.  **Create and activate a virtual environment:**
-    ```bash
-    python3 -m venv venv
-    source venv/bin/activate
-    ```
-3.  **Install its specific dependencies:**
-    ```bash
-    pip install -r requirements.txt
-    ```
-4.  **Run the script:**
-    ```bash
-    python3 ioc_extractor.py
-    ```
-    This will run the script using its sample data and send the results to the configured n8n webhook.
+* creates a virtual environment
+* installs dependencies
+* prepares required NLP models
 
 ---
 
-## ⚙️ n8n Orchestration
+## Configuration
 
-The true power of this project is realized when orchestrated by n8n.
+Sensitive values are stored in environment files.
 
-1.  **Create Webhooks in n8n:** For each feature, create a "Webhook" node in n8n. This will generate a unique URL.
-2.  **Update `config.py`:** Add the webhook URLs generated by n8n to the `WEBHOOK_URLS` dictionary in your `config.py` file.
-3.  **Build Your Workflow:** Chain the features together using "HTTP Request" nodes in n8n to call your Python microservices. Use the output of one service as the input for the next.
+```bash
+cp .secrets.env.example .secrets.env
+```
 
----
+Add API keys as needed:
 
-## 🔒 Security Notes
+```env
+VIRUSTOTAL_API_KEY=...
+ABUSEIPDB_API_KEY=...
+SHODAN_API_KEY=...
+```
 
--   **Tor Usage**: All requests to `.onion` sites are automatically routed through the Tor SOCKS5 proxy.
--   **API Keys**: Keys are loaded from a `.secrets.env` file, which is included in `.gitignore`.
--   **Rate Limiting**: Scripts include built-in delays to respect the rate limits of free public APIs.
--   **Error Handling**: Each script contains comprehensive exception handling to manage network failures and API errors gracefully.
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! If you'd like to improve the pipeline, please feel free to:
--   Report bugs and issues.
--   Suggest new features or data sources.
--   Submit pull requests with enhancements.
--   Improve documentation.
+The pipeline runs without API keys, but enrichment depth will be reduced.
 
 ---
 
-## 📜 License
+## Running the Pipeline
 
-This project is licensed under the MIT License - see the `LICENSE` file for details.
+### Headless (CLI)
+
+```bash
+source venv/bin/activate
+python orchestration/run_pipeline.py
+```
+
+Recommended for:
+
+* cron jobs
+* servers
+* CI/CD environments
+
+### Web Dashboard
+
+```bash
+source venv/bin/activate
+python web/app.py
+```
+
+Open:
+
+```
+http://localhost:8080
+```
+
+The dashboard provides:
+
+* pipeline execution control
+* live logs
+* intelligence visualization
 
 ---
 
-## ⚠️ Disclaimer
+## Security & OpSec Notes
 
-This tool is for **educational and research purposes only**. The user is responsible for ensuring their use of this software complies with all applicable laws and regulations. The authors assume no liability for any misuse of this software.
+* All dark web traffic is routed through Tor
+* Circuit isolation is enforced per feature
+* No direct network access from collectors
+* No silent clearnet fallback
+* Local-first data storage
+
+If Tor fails, the pipeline halts.
 
 ---
 
-**Built with ❤️ for the cybersecurity community**
+## Disclaimer
+
+**For educational and research purposes only.**
+
+Accessing dark web services may be illegal in some jurisdictions.
+You are responsible for ensuring compliance with all applicable laws.
+
+The authors assume no liability for misuse.
+
+---
+
+## Contributing
+
+Contributions are welcome, but must follow architectural rules:
+
+1. All Tor access must go through the Tor Manager
+2. Outputs must conform to defined schemas
+3. Features must not hardcode execution order
+4. Analysis modules must emit confidence-scored evidence
+
+---
+
+## Additional Documentation
+
+- `docs/architecture.md`
+- `docs/data_flow.md`
+- `docs/pipeline_phases.md`
+- `docs/threat_model.md`
+- `docs/contributor_guide.md`
+
+**Built to understand the dark web, not just scrape it.**

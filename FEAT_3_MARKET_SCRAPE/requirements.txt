@@ -1,4 +1,0 @@
-requests[socks]
-beautifulsoup4
-lxml
-urllib3

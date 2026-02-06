@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dark Web OSINT Platform v2</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+</head>
+<body class="bg-gray-900 text-gray-100 font-sans" x-data="appData()">
+
+    <!-- Navbar -->
+    <nav class="border-b border-gray-800 bg-gray-900 p-4 sticky top-0 z-50">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold text-blue-500">🕵️ Dark Web OSINT <span class="text-xs text-gray-500">v2.0 Platform</span></h1>
+            <div class="flex items-center space-x-4">
+                <span class="text-sm" :class="status.running ? 'text-green-400 animate-pulse' : 'text-gray-400'" x-text="status.running ? 'RUNNING: ' + status.stage : 'IDLE'"></span>
+                <button @click="runPipeline" :disabled="status.running" 
+                        class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 px-4 py-2 rounded text-sm font-semibold transition">
+                    Run Pipeline
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto p-6 grid grid-cols-12 gap-6">
+        
+        <!-- Sidebar Navigation -->
+        <div class="col-span-2 space-y-2">
+            <button @click="view = 'logs'" :class="view === 'logs' ? 'bg-gray-800 border-l-4 border-blue-500' : 'hover:bg-gray-800'" class="w-full text-left p-3 rounded transition">🖥️ Live Logs</button>
+            <div class="h-px bg-gray-800 my-2"></div>
+            <button @click="loadData('raw'); view = 'raw'" :class="view === 'raw' ? 'bg-gray-800 border-l-4 border-yellow-500' : 'hover:bg-gray-800'" class="w-full text-left p-3 rounded transition">📥 Raw Collection</button>
+            <button @click="loadData('normalized'); view = 'normalized'" :class="view === 'normalized' ? 'bg-gray-800 border-l-4 border-purple-500' : 'hover:bg-gray-800'" class="w-full text-left p-3 rounded transition">⚙️ Normalized Data</button>
+            <button @click="loadData('enriched'); view = 'enriched'" :class="view === 'enriched' ? 'bg-gray-800 border-l-4 border-green-500' : 'hover:bg-gray-800'" class="w-full text-left p-3 rounded transition">🌍 Enriched Intel</button>
+            <button @click="loadData('intelligence'); view = 'intelligence'" :class="view === 'intelligence' ? 'bg-gray-800 border-l-4 border-red-500' : 'hover:bg-gray-800'" class="w-full text-left p-3 rounded transition">🧠 Final Analysis</button>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="col-span-10 bg-gray-800 rounded-lg shadow-xl min-h-[80vh] p-6 border border-gray-700">
+            
+            <!-- Logs View -->
+            <div x-show="view === 'logs'">
+                <h2 class="text-xl font-bold mb-4">Pipeline Logs</h2>
+                <div class="bg-black rounded p-4 h-[70vh] overflow-y-auto font-mono text-sm" id="log-container">
+                    <template x-for="log in logs">
+                        <div class="py-0.5 border-b border-gray-900" :class="log.includes('❌') ? 'text-red-400' : (log.includes('✅') ? 'text-green-400' : 'text-gray-300')" x-text="log"></div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Data Views -->
+            <div x-show="view !== 'logs'">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold capitalize" x-text="view + ' Data'"></h2>
+                    <button @click="loadData(view)" class="text-sm text-blue-400 hover:text-white">Refresh</button>
+                </div>
+                
+                <div class="space-y-4 h-[70vh] overflow-y-auto">
+                    <template x-for="item in currentData">
+                        <div class="bg-gray-900 p-4 rounded border border-gray-700">
+                            <div class="flex justify-between text-xs text-gray-500 mb-2">
+                                <span x-text="item.filename"></span>
+                                <span x-text="item.content.meta?.timestamp"></span>
+                            </div>
+                            <pre class="text-xs text-green-300 overflow-x-auto" x-text="JSON.stringify(item.content.data, null, 2)"></pre>
+                        </div>
+                    </template>
+                    <div x-show="currentData.length === 0" class="text-center text-gray-500 mt-20">No data found for this category. Run the pipeline first.</div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        function appData() {
+            return {
+                view: 'logs',
+                status: { running: false, stage: 'Idle' },
+                logs: [],
+                currentData: [],
+                socket: null,
+
+                init() {
+                    this.socket = io();
+                    this.socket.on('log_update', (msg) => {
+                        this.logs.push(msg.log);
+                        this.scrollToBottom();
+                    });
+                    this.socket.on('status_update', (msg) => {
+                        if(msg.status === 'completed') {
+                            this.status.running = false;
+                            this.status.stage = 'Completed';
+                            this.loadData('intelligence'); // Auto load results on finish
+                        }
+                    });
+                },
+
+                runPipeline() {
+                    this.status.running = true;
+                    this.status.stage = 'Starting...';
+                    this.logs = [];
+                    this.view = 'logs';
+                    fetch('/api/run', { method: 'POST' });
+                },
+
+                async loadData(category) {
+                    const res = await fetch(`/api/data/${category}`);
+                    const json = await res.json();
+                    this.currentData = json.data;
+                },
+
+                scrollToBottom() {
+                    const el = document.getElementById('log-container');
+                    if(el) el.scrollTop = el.scrollHeight;
+                }
+            }
+        }
+    </script>
+</body>
+</html>

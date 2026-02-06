@@ -1,0 +1,47 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ScoringInput",
+  "description": "Strict contract for inputting data into the Scoring Engine",
+  "type": "object",
+  "required": ["id", "type", "evidence"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier (IP, Handle, Domain, Hash)"
+    },
+    "type": {
+      "type": "string",
+      "enum": ["vendor", "ip", "domain", "hash", "handle", "campaign", "wallet"],
+      "description": "The type of entity being scored"
+    },
+    "evidence": {
+      "type": "object",
+      "description": "Categorized signals collected by features",
+      "patternProperties": {
+        "^(ioc|infrastructure|behavioral|mitre|affiliate)$": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["type", "confidence"],
+            "properties": {
+              "type": { 
+                "type": "string",
+                "description": "Description of the signal (e.g., 'open_port_22', 'ransomware_keyword')"
+              },
+              "confidence": {
+                "type": "number",
+                "minimum": 0.0,
+                "maximum": 1.0,
+                "description": "How sure is the feature about this signal?"
+              },
+              "source_feature": { 
+                "type": "string",
+                "description": "Which feature generated this signal"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

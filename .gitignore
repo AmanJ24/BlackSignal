@@ -1,85 +1,26 @@
-# Sensitive Data
+# --- Secrets & Config ---
+.env
 .secrets.env
-*.env
-config.json
-config.py
-api_keys.txt
-secrets/
-To-Do.txt
-ToDo.txt
-todo.txt
-instructions.txt
+config/secrets.py
 
-# Python
+# --- Python ---
 __pycache__/
 *.py[cod]
 *$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# Virtual Environment
 venv/
-venv_feat*/
 env/
-ENV/
-.venv/
-VENV/
 
-# Logs and temporary files
-*.log
-*.tmp
-*.temp
-temp/
-logs/
+# --- Data Directories (Don't commit intelligence) ---
+data/raw/*
+data/normalized/*
+data/enriched/*
+data/intelligence/*
+!data/**/.gitkeep
 
-# IDE
+# --- Logs ---
+logs/*
+!logs/.gitkeep
+
+# --- IDEs ---
 .vscode/
 .idea/
-*.swp
-*.swo
-*~
-
-# OS
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# Tor specific
-torrc
-.tor/
-
-# Testing
-.pytest_cache/
-.coverage
-htmlcov/
-.tox/
-
-# n8n specific (if any local files)
-.n8n/
-workflows/
-
-# Project specific
-scraped_data/
-output/
-results/
