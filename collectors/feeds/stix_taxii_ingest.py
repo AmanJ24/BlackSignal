@@ -50,6 +50,7 @@ class STIXIngest:
         
         filename = f"feed_{name}_{int(time.time())}.json"
         path = os.path.join(config.BASE_DIR, "data", "raw", filename)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
         
         with open(path, 'w') as f:
             json.dump(output, f, indent=4)

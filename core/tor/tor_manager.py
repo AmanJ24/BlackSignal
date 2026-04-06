@@ -5,7 +5,7 @@ import logging
 import requests
 import socks
 from stem.control import Controller
-from stem import SocketError
+from stem import SocketError, Signal
 from stem.connection import AuthenticationFailure
 
 logger = logging.getLogger("TorManager")
@@ -54,3 +54,23 @@ class TorManager:
         }
         session.proxies.update(proxies)
         return session
+
+    def new_circuit(self):
+        """Request a new Tor circuit (NEWNYM). Throttled to max once per 10s by Tor."""
+        self.ensure_alive()
+        try:
+            self._controller.signal(Signal.NEWNYM)
+            logger.info("🔄 Requested new Tor circuit (NEWNYM).")
+            time.sleep(1)  # Allow circuit establishment
+        except Exception as e:
+            logger.error(f"⚠️  Circuit renewal failed: {e}")
+
+    def disconnect(self):
+        """Cleanly close the Tor controller connection."""
+        if self._controller is not None:
+            try:
+                self._controller.close()
+                logger.info("🔌 Tor controller disconnected.")
+            except Exception:
+                pass
+            self._controller = None

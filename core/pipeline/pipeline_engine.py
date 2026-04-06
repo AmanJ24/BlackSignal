@@ -4,14 +4,19 @@ import time
 from .stage_registry import get_pipeline_stages
 
 logger = logging.getLogger("PipelineEngine")
-logging.basicConfig(level=logging.INFO)
+
+# Critical categories — failure here aborts the pipeline
+CRITICAL_CATEGORIES = {"collection", "scoring"}
 
 class PipelineEngine:
-    def __init__(self):
+    def __init__(self, fail_fast: bool = True):
         self.stages = get_pipeline_stages()
+        self.fail_fast = fail_fast
         # Create an event flag for every stage
-        # This allows tasks to wait for specific stages to finish without knowing about the Task object itself
         self.completion_events = {name: asyncio.Event() for name in self.stages}
+        # Track failed stages for downstream decision-making
+        self.failed_stages: set = set()
+        self.stage_results: dict = {}
 
     async def _execute_stage(self, stage_name: str):
         """
@@ -27,25 +32,38 @@ class PipelineEngine:
                 # Wait until the dependency's event flag is set to True
                 await self.completion_events[dep].wait()
 
-        # 2. Execute Action
+        # 2. Check if any upstream dependency failed (skip if so)
+        if stage.depends_on:
+            failed_deps = [dep for dep in stage.depends_on if dep in self.failed_stages]
+            if failed_deps:
+                logger.warning(f"⏭️  Skipping {stage_name} — upstream failed: {failed_deps}")
+                self.failed_stages.add(stage_name)
+                self.stage_results[stage_name] = "SKIPPED"
+                self.completion_events[stage_name].set()
+                return "SKIPPED"
+
+        # 3. Execute Action
         logger.info(f"🚀 Starting Stage: {stage_name}")
         start_time = time.time()
         status = "FAILED"
         
         try:
-            # Run the synchronous action in a separate thread to keep the event loop moving
             await asyncio.to_thread(stage.action)
             status = "SUCCESS"
         except Exception as e:
-            logger.error(f"❌ Stage {stage_name} Failed: {e}")
-            # In a production system, you might want to stop the whole pipeline here
-            # For now, we allow it to proceed so we can see what else works
+            logger.error(f"❌ Stage {stage_name} Failed: {e}", exc_info=True)
+            self.failed_stages.add(stage_name)
+            
+            # If a critical stage fails and fail_fast is on, abort the pipeline
+            if self.fail_fast and stage.category in CRITICAL_CATEGORIES:
+                logger.critical(f"🛑 Critical stage {stage_name} failed. Aborting pipeline.")
+                raise RuntimeError(f"Critical stage '{stage_name}' failed: {e}") from e
         
         duration = round(time.time() - start_time, 2)
-        logger.info(f"✅ Finished Stage: {stage_name} ({duration}s) [{status}]")
+        self.stage_results[stage_name] = status
+        logger.info(f"{'✅' if status == 'SUCCESS' else '❌'} Finished Stage: {stage_name} ({duration}s) [{status}]")
 
-        # 3. Signal Completion
-        # This wakes up any other tasks waiting on this stage
+        # 4. Signal Completion
         self.completion_events[stage_name].set()
         return status
 
@@ -56,12 +74,20 @@ class PipelineEngine:
         logger.info("🎬 Starting OSINT Pipeline...")
         start_global = time.time()
 
-        # Create a TaskGroup to manage all stages concurrently
-        async with asyncio.TaskGroup() as tg:
-            for name in self.stages:
-                # Schedule every stage immediately.
-                # The _execute_stage logic handles the waiting.
-                tg.create_task(self._execute_stage(name))
+        try:
+            async with asyncio.TaskGroup() as tg:
+                for name in self.stages:
+                    tg.create_task(self._execute_stage(name))
+        except* RuntimeError as eg:
+            # Collect critical failure messages
+            for exc in eg.exceptions:
+                logger.critical(f"Pipeline aborted: {exc}")
 
         duration = round(time.time() - start_global, 2)
-        logger.info(f"🏁 Pipeline Execution Completed in {duration}s")
+        
+        # Print summary
+        succeeded = sum(1 for s in self.stage_results.values() if s == "SUCCESS")
+        failed = sum(1 for s in self.stage_results.values() if s == "FAILED")
+        skipped = sum(1 for s in self.stage_results.values() if s == "SKIPPED")
+        
+        logger.info(f"🏁 Pipeline Completed in {duration}s — ✅ {succeeded} succeeded, ❌ {failed} failed, ⏭️ {skipped} skipped")

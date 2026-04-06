@@ -14,6 +14,11 @@ LOG_DIR = BASE_DIR / "logs"
 # Alias for Backward Compatibility
 OUTPUT_DIR = DATA_DIR
 
+# Ensure data directories exist at startup
+for _subdir in ["raw", "normalized", "enriched", "intelligence"]:
+    (DATA_DIR / _subdir).mkdir(parents=True, exist_ok=True)
+LOG_DIR.mkdir(parents=True, exist_ok=True)
+
 # --- TOR SETTINGS ---
 TOR_CONTROL_PORT = int(os.getenv("TOR_CONTROL_PORT", 9051))
 TOR_SOCKS_PORT = int(os.getenv("TOR_SOCKS_PORT", 9050))

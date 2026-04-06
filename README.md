@@ -1,141 +1,200 @@
-# 🕵️ Dark Web OSINT & Threat Intelligence Platform
+# 🕵️ BlackSignal — Dark Web Threat Intelligence Pipeline
 
-A modular, Tor-native pipeline for dark web intelligence collection, enrichment, analysis, and confidence-based threat scoring.
+**Automated dark web OSINT collection, enrichment, and threat scoring — built for security teams who need to know what's happening on Tor before it hits their network.**
 
----
-
-## Overview
-
-This project is an **end-to-end OSINT and Threat Intelligence platform** designed to monitor dark web ecosystems, extract actionable indicators, enrich them with external intelligence, and generate analyst-ready threat assessments.
-
-It is built as a **layered intelligence pipeline**, not a collection of scripts.
-Each stage has a clearly defined responsibility, strict data contracts, and explicit execution order controlled by a DAG-based pipeline engine.
-
-The system is designed to scale from **local research** to **SOC-style automation** without architectural changes.
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://python.org)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Tests](https://img.shields.io/badge/tests-29%20passing-brightgreen.svg)]()
 
 ---
 
-## What This Project Does
+## Why BlackSignal Exists
 
-At a high level, the platform answers one question:
+Dark web marketplaces sell stolen credentials, leaked databases, ransomware kits, and zero-day exploits **every day**. Most organizations only learn about this _after_ the breach.
 
-> *What activity on the dark web is actually relevant, and how risky is it?*
+BlackSignal fills that gap. It's a **proactive intelligence pipeline** that continuously monitors dark web sources and answers one question:
 
-It does this through five distinct phases:
+> _What activity on the dark web is relevant to my organization, and how dangerous is it?_
 
-### 1. Collection
+### Real-World Use Cases
 
-* Tor relay enumeration
-* `.onion` service discovery
-* Dark web marketplace scraping
-* STIX/TAXII threat feed ingestion
+| Who Uses It | What They Get |
+|-------------|--------------|
+| **SOC Analysts** | Automated alerts when company credentials, domains, or IPs appear in dark web listings |
+| **Threat Intelligence Teams** | Structured IOC feeds (hashes, IPs, wallets) enriched with VirusTotal/AbuseIPDB/Shodan data |
+| **Incident Responders** | MITRE ATT&CK TTP mapping from marketplace posts — identify attacker playbooks before they strike |
+| **Security Researchers** | Behavioral profiling of threat actors — track vendor reputation, RaaS affiliate patterns, handle correlation across forums |
+| **Red Teams** | Understand what's being sold (exploit kits, credentials) to anticipate attack vectors |
+| **CISOs / Risk Teams** | Confidence-scored threat reports — prioritize response based on data, not gut feeling |
 
-### 2. Processing
+### What It Actually Produces
 
-* IOC extraction (IPs, domains, wallets, hashes)
-* NLP-based named entity recognition
-* Normalization of unstructured text into machine-readable data
+BlackSignal doesn't just "scrape the dark web" — it generates **actionable intelligence artifacts**:
 
-### 3. Enrichment
-
-* External intelligence correlation (VirusTotal, AbuseIPDB, Shodan, BGPView)
-* Infrastructure and geolocation analysis
-* Contextual metadata augmentation
-
-### 4. Analysis
-
-* Behavioral profiling
-* Reputation estimation
-* MITRE ATT&CK technique mapping
-* Affiliate and RaaS structure detection
-* Handle and alias correlation
-
-### 5. Intelligence & Scoring
-
-* Aggregation of multi-source signals
-* Confidence-weighted threat scoring
-* Generation of structured intelligence artifacts
+```
+📊 Scored Intelligence Report
+├── Entity: "DarkVault_Vendor_X"
+│   ├── Threat Score: 87/100 (CRITICAL)
+│   ├── Severity: CRITICAL
+│   ├── Evidence:
+│   │   ├── behavioral: high_risk_keywords (ransomware, exploit) — confidence: 0.8
+│   │   ├── mitre: T1486 Data Encrypted for Impact — confidence: 0.7
+│   │   ├── affiliate: RaaS recruitment detected — confidence: 0.9
+│   │   └── ioc: SHA256 detected by 14 VirusTotal engines — confidence: 1.0
+│   └── Overall Confidence: 0.85
+```
 
 ---
 
 ## Architecture
 
-The platform follows a **layered, unidirectional pipeline architecture**.
-Each layer communicates only through explicit data artifacts and never mutates upstream data.
+BlackSignal is a **DAG-based, unidirectional pipeline** — not a collection of scripts. Each stage has strict data contracts, explicit dependencies, and isolated execution.
 
 ### Pipeline Flow
 
-<p align="center">
-  <img src="docs/images/architecture_flow.png" width="400">
-</p>
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                          COLLECTION (Parallel)                         │
+│  ┌──────────────┐ ┌───────────────┐ ┌──────────────┐ ┌─────────────┐  │
+│  │ Tor Relay    │ │ .onion        │ │ Marketplace  │ │ STIX/TAXII  │  │
+│  │ Inventory    │ │ Discovery     │ │ Scraper      │ │ Feed Ingest │  │
+│  └──────────────┘ └───────────────┘ └──────────────┘ └─────────────┘  │
+└───────────────────────────────┬─────────────────────────────────────────┘
+                                │ data/raw/*.json
+                                ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         PROCESSING (Parallel)                          │
+│  ┌──────────────┐ ┌───────────────┐ ┌──────────────┐                  │
+│  │ IOC Extract  │ │ Hash Extract  │ │ NER Extract  │                  │
+│  │ (IPs, BTC,   │ │ (MD5, SHA1,   │ │ (People, Org │                  │
+│  │  Emails)     │ │  SHA256)      │ │  Locations)  │                  │
+│  └──────────────┘ └───────────────┘ └──────────────┘                  │
+└───────────────────────────────┬─────────────────────────────────────────┘
+                                │ data/normalized/*.json
+                                ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         ENRICHMENT (Parallel)                          │
+│  ┌──────────────┐ ┌───────────────┐ ┌──────────────┐                  │
+│  │ VirusTotal   │ │ Shodan /      │ │ Geo-IP       │                  │
+│  │ AbuseIPDB    │ │ BGPView       │ │ Correlation  │                  │
+│  └──────────────┘ └───────────────┘ └──────────────┘                  │
+└───────────────────────────────┬─────────────────────────────────────────┘
+                                │ data/enriched/*.json
+                                ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                          ANALYSIS (Parallel)                           │
+│  ┌──────────────┐ ┌───────────────┐ ┌──────────────┐ ┌─────────────┐  │
+│  │ Behavioral   │ │ MITRE ATT&CK  │ │ Affiliate /  │ │ Handle      │  │
+│  │ Profiling    │ │ TTP Mapping   │ │ RaaS Detect  │ │ Correlation │  │
+│  └──────────────┘ └───────────────┘ └──────────────┘ └─────────────┘  │
+│                           │                                            │
+│                   ┌───────▼────────┐                                   │
+│                   │  Reputation    │                                   │
+│                   │  Aggregation   │                                   │
+│                   └────────────────┘                                   │
+└───────────────────────────────┬─────────────────────────────────────────┘
+                                │ data/intelligence/*.json
+                                ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                       SCORING (Final Stage)                            │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │ Confidence-Weighted Threat Scoring Engine                      │   │
+│  │ Input: all enriched + intelligence evidence                    │   │
+│  │ Output: 0-100 score, severity (LOW/MED/HIGH/CRITICAL),        │   │
+│  │         per-signal breakdown with confidence intervals         │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+└───────────────────────────────┬─────────────────────────────────────────┘
+                                │ scored_intelligence_*.json
+                                ▼
+                    📊 Analyst Dashboard (Web UI)
+```
 
----
+### Key Design Decisions
 
-### Orchestration & Control Plane
-
-Execution is coordinated by a **Python-native DAG engine**.
-Pipeline order and parallelism are defined explicitly, not inferred from directory names or script order.
-
-![alt text](docs/images/orchestration_flow.png)
-
----
-
-### Networking & Safety Boundary
-
-All dark web access is routed through a single, controlled interface.
-No collector or scraper talks to the network directly.
-
-<p align="center">
-  <img src="docs/images/network_boundary.png" width="400">
-</p>
-
-If Tor connectivity is lost, the pipeline fails closed.
-There is no silent clearnet fallback.
-
----
-
-### Data Lifecycle
-
-Data flows forward only and is stored in clearly separated layers.
-
-![alt text](docs/images/data_lifecycle.png)
-
-This design enables replayability, auditability, and partial re-execution.
+- **DAG execution** — Stages run in parallel; dependencies are explicit, not inferred from file names
+- **Fail-fast for critical stages** — If collection or scoring fails, the pipeline halts. Non-critical failures are skipped gracefully
+- **Tor-first networking** — All dark web access routes through `TorManager` with per-purpose circuit isolation. No silent clearnet fallback
+- **Data flows forward only** — Raw → Normalized → Enriched → Intelligence → Scored. No stage mutates upstream data
+- **Evidence-based scoring** — Every threat score is decomposable: you can trace exactly _why_ an entity scored 87/100
 
 ---
 
 ## Project Structure
 
 ```
-.
-├── core/                  # Brain: Tor manager, pipeline engine, scoring
-├── collectors/            # Tor-facing data collection
-├── processors/            # IOC & entity extraction
-├── enrichment/            # External intelligence correlation
-├── analysis/              # Behavioral and threat analysis
-├── orchestration/         # Pipeline entry points
-├── data/                  # raw → normalized → enriched → intelligence
-├── web/                   # Analyst dashboard
-├── docs/                  # Project documentation
-├── config/                # Runtime configuration
-└── README.md
+BlackSignal/
+├── core/                       # Brain of the system
+│   ├── pipeline/
+│   │   ├── pipeline_engine.py  # Async DAG executor with fail-fast
+│   │   ├── stage_registry.py   # DAG definition — all stage dependencies
+│   │   └── scoring_stage.py    # Final stage: evidence → scored intelligence
+│   ├── tor/
+│   │   └── tor_manager.py      # Tor SOCKS proxy + circuit management
+│   ├── scoring_engine.py       # Confidence-weighted 0-100 threat scorer
+│   ├── logging_config.py       # Centralized rotating-file + console logging
+│   └── schemas/
+│       └── scoring_input_schema.json  # Data contract for scoring input
+│
+├── collectors/                 # Stage 1: Tor-facing data collection
+│   ├── tor/relay_inventory.py        # Tor consensus relay enumeration
+│   ├── discovery/onion_discovery.py  # Recursive .onion link crawler
+│   ├── marketplaces/market_scraper.py # Dark marketplace page scraper
+│   └── feeds/stix_taxii_ingest.py    # URLHaus / STIX threat feed ingest
+│
+├── processors/                 # Stage 2: IOC & entity extraction
+│   └── extraction/
+│       ├── ioc_extractor.py    # IPs, emails, BTC/ETH wallets, .onion domains
+│       ├── hash_extractor.py   # MD5, SHA1, SHA256 hashes
+│       └── ner_extractor.py    # Named Entity Recognition (spaCy)
+│
+├── enrichment/                 # Stage 3: External intelligence correlation
+│   ├── api_enrichment.py       # VirusTotal + AbuseIPDB lookups
+│   ├── infrastructure_mapper.py # Shodan + BGPView ASN analysis
+│   ├── geolocation_correlator.py # Geo-IP risk correlation
+│   └── utils.py                # Base enricher class
+│
+├── analysis/                   # Stage 4: Threat analysis
+│   ├── behavioral_analysis.py  # Sentiment + keyword risk scoring
+│   ├── mitre_attack_mapping.py # MITRE ATT&CK TTP detection
+│   ├── affiliate_analysis.py   # RaaS / affiliate recruitment detection
+│   ├── handle_correlation.py   # Threat actor alias matching
+│   └── reputation_analysis.py  # Multi-source evidence aggregation
+│
+├── orchestration/
+│   └── run_pipeline.py         # CLI entry point
+│
+├── web/
+│   ├── app.py                  # Flask + SocketIO dashboard server
+│   └── templates/dashboard.html # Live pipeline UI
+│
+├── data/                       # Pipeline data (gitignored)
+│   ├── raw/                    # Stage 1 output
+│   ├── normalized/             # Stage 2 output
+│   ├── enriched/               # Stage 3 output
+│   └── intelligence/           # Stage 4+5 output (includes scored results)
+│
+├── tests/                      # pytest test suite (29 tests)
+│   ├── test_scoring_engine.py  # ScoringEngine unit tests
+│   └── test_extractors.py      # IOC + Hash pattern tests
+│
+├── config/settings.py          # Runtime config + env loading
+├── requirements.txt            # Python dependencies
+├── setup.sh                    # One-command setup script
+└── .secrets.env.example        # Template for API keys and credentials
 ```
-
-Execution order is defined by the pipeline DAG, not by directory structure.
 
 ---
 
-## Installation
+## Quick Start
 
 ### Prerequisites
 
-* Python **3.10+**
-* A running **Tor daemon**
+- Python **3.10+**
+- A running **Tor daemon** with control port enabled
+  - SOCKS proxy: `127.0.0.1:9050`
+  - Control port: `127.0.0.1:9051`
 
-  * SOCKS proxy: `127.0.0.1:9050`
-  * Control port: `127.0.0.1:9051`
-
-### Setup
+### Installation
 
 ```bash
 git clone https://github.com/AmanJ24/BlackSignal
@@ -145,79 +204,100 @@ chmod +x setup.sh
 ./setup.sh
 ```
 
-This script:
+This creates a virtual environment, installs dependencies, and downloads NLP models.
 
-* creates a virtual environment
-* installs dependencies
-* prepares required NLP models
-
----
-
-## Configuration
-
-Sensitive values are stored in environment files.
+### Configuration
 
 ```bash
 cp .secrets.env.example .secrets.env
+# Edit .secrets.env with your API keys and Tor password
 ```
 
-Add API keys as needed:
+| Variable | Required | Purpose |
+|----------|----------|---------|
+| `TOR_PASSWORD` | ✅ | Tor control port authentication |
+| `VIRUSTOTAL_API_KEY` | ❌ | Hash reputation lookups |
+| `ABUSEIPDB_API_KEY` | ❌ | IP abuse scoring |
+| `SHODAN_API_KEY` | ❌ | Infrastructure reconnaissance |
+| `DASHBOARD_USER` / `DASHBOARD_PASSWORD` | ❌ | Dashboard HTTP auth (disabled if unset) |
 
-```env
-VIRUSTOTAL_API_KEY=...
-ABUSEIPDB_API_KEY=...
-SHODAN_API_KEY=...
-```
-
-The pipeline runs without API keys, but enrichment depth will be reduced.
+> The pipeline runs without API keys, but enrichment depth will be reduced.
 
 ---
 
-## Running the Pipeline
+## Usage
 
-### Headless (CLI)
+### Run the Pipeline (CLI)
 
 ```bash
 source venv/bin/activate
 python orchestration/run_pipeline.py
 ```
 
-Recommended for:
+Output:
+```
+14:32:01 │ PipelineEngine       │ INFO    │ 🎬 Starting OSINT Pipeline...
+14:32:01 │ PipelineEngine       │ INFO    │ 🚀 Starting Stage: relay_inventory
+14:32:01 │ PipelineEngine       │ INFO    │ 🚀 Starting Stage: stix_ingest
+14:32:03 │ PipelineEngine       │ INFO    │ ✅ Finished Stage: stix_ingest (2.1s) [SUCCESS]
+14:32:15 │ PipelineEngine       │ INFO    │ 🚀 Starting Stage: ioc_extraction
+...
+14:33:42 │ ScoringStage         │ INFO    │ 🎯 Scored 47 entities — 🔴 3 CRITICAL, 🟠 8 HIGH
+14:33:42 │ PipelineEngine       │ INFO    │ 🏁 Pipeline Completed in 101s — ✅ 16 succeeded, ❌ 0 failed, ⏭️ 0 skipped
+```
 
-* cron jobs
-* servers
-* CI/CD environments
-
-### Web Dashboard
+### Run the Dashboard
 
 ```bash
 source venv/bin/activate
 python web/app.py
+# Open http://localhost:8080
 ```
 
-Open:
+Features:
+- **One-click pipeline execution** with live log streaming
+- **Data explorer** — browse raw, normalized, enriched, and scored intelligence
+- **Real-time status** via WebSocket
 
+### Run Tests
+
+```bash
+source venv/bin/activate
+python -m pytest tests/ -v
 ```
-http://localhost:8080
-```
-
-The dashboard provides:
-
-* pipeline execution control
-* live logs
-* intelligence visualization
 
 ---
 
-## Security & OpSec Notes
+## How the Scoring Works
 
-* All dark web traffic is routed through Tor
-* Circuit isolation is enforced per feature
-* No direct network access from collectors
-* No silent clearnet fallback
-* Local-first data storage
+Every entity (IP, hash, vendor handle, wallet) accumulates **evidence** from multiple pipeline stages. The Scoring Engine converts this into a single threat score:
 
-If Tor fails, the pipeline halts.
+```
+Threat Score = Σ (signal_confidence × category_weight × 10)
+```
+
+| Evidence Category | Weight | Example Signal |
+|-------------------|--------|----------------|
+| `ioc` | 1.0× | IP found in threat feed |
+| `infrastructure` | 1.5× | Hosted on bulletproof ASN |
+| `behavioral` | 2.0× | Negative sentiment + ransomware keywords |
+| `mitre` | 2.5× | Matches T1486 (Data Encrypted for Impact) |
+| `affiliate` | 3.0× | RaaS recruitment language detected |
+
+- Score is **capped at 100** and bucketed into severity levels: LOW (<40), MEDIUM (40-59), HIGH (60-79), CRITICAL (80+)
+- Every score includes a **reason breakdown** — no black-box outputs
+
+---
+
+## Security & OpSec
+
+- ✅ All dark web traffic routed through Tor with per-purpose circuit isolation
+- ✅ Circuit renewal (`NEWNYM`) supported for long-running operations
+- ✅ No silent clearnet fallback — if Tor fails, collection halts
+- ✅ Dashboard supports optional HTTP Basic Auth  
+- ✅ Path traversal protection on data API endpoints
+- ✅ Secrets loaded from `.secrets.env` (gitignored)
+- ✅ SECRET_KEY auto-generated if not set
 
 ---
 
@@ -225,10 +305,7 @@ If Tor fails, the pipeline halts.
 
 **For educational and research purposes only.**
 
-Accessing dark web services may be illegal in some jurisdictions.
-You are responsible for ensuring compliance with all applicable laws.
-
-The authors assume no liability for misuse.
+Accessing dark web services may be illegal in some jurisdictions. You are responsible for ensuring compliance with all applicable laws. The authors assume no liability for misuse.
 
 ---
 
@@ -236,19 +313,12 @@ The authors assume no liability for misuse.
 
 Contributions are welcome, but must follow architectural rules:
 
-1. All Tor access must go through the Tor Manager
-2. Outputs must conform to defined schemas
-3. Features must not hardcode execution order
-4. Analysis modules must emit confidence-scored evidence
+1. All Tor access must go through `TorManager`
+2. Pipeline data flows forward only — never mutate upstream artifacts
+3. All analysis modules must emit confidence-scored evidence
+4. New stages must be registered in `stage_registry.py` with explicit dependencies
+5. Tests are required for new logic — run `pytest` before submitting
 
 ---
-
-## Additional Documentation
-
-- `docs/architecture.md`
-- `docs/data_flow.md`
-- `docs/pipeline_phases.md`
-- `docs/threat_model.md`
-- `docs/contributor_guide.md`
 
 **Built to understand the dark web, not just scrape it.**

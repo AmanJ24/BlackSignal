@@ -1,26 +1,69 @@
-# --- Secrets & Config ---
-.env
-.secrets.env
-config/secrets.py
+# ==========================================
+# BlackSignal .gitignore
+# ==========================================
 
 # --- Python ---
 __pycache__/
 *.py[cod]
 *$py.class
+*.so
+*.egg-info/
+*.egg
+dist/
+build/
+eggs/
+*.whl
+
+# --- Virtual Environment ---
 venv/
+.venv/
 env/
+ENV/
 
-# --- Data Directories (Don't commit intelligence) ---
-data/raw/*
-data/normalized/*
-data/enriched/*
-data/intelligence/*
-!data/**/.gitkeep
-
-# --- Logs ---
-logs/*
-!logs/.gitkeep
-
-# --- IDEs ---
+# --- IDE ---
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
+.project
+.settings/
+
+# --- Secrets & Config ---
+.secrets.env
+.env
+*.pem
+*.key
+
+# --- Pipeline Data (regenerated on each run) ---
+data/raw/
+data/normalized/
+data/enriched/
+data/intelligence/
+
+# --- Logs ---
+logs/
+*.log
+
+# --- OS Files ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Testing ---
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# --- Code Review Graph (local tooling) ---
+.code-review-graph/
+
+# --- Claude / AI tooling ---
+.claude/
+
+# --- Misc ---
+*.bak
+*.tmp
+*.orig

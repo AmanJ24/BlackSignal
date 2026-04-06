@@ -25,6 +25,9 @@ from analysis.affiliate_analysis import AffiliateAnalysis
 from analysis.handle_correlation import HandleCorrelation
 from analysis.reputation_analysis import ReputationAnalysis
 
+# --- IMPORT SCORING ---
+from core.pipeline.scoring_stage import ScoringStage
+
 # Config for targets
 import config.settings as config
 
@@ -42,10 +45,10 @@ def get_pipeline_stages() -> dict:
     
     # 1. Wrappers to initialize classes with config
     def run_relay(): RelayInventory().run()
-    def run_onion(): OnionCrawler(start_urls=settings.ONION_SEEDS).start()
+    def run_onion(): OnionCrawler(start_urls=config.ONION_SEEDS).start()
     # For Scraper, we iterate all targets sequentially for now
     def run_market(): 
-        for target in settings.MARKET_TARGETS:
+        for target in config.MARKET_TARGETS:
             MarketScraper(target).run()
     def run_stix(): STIXIngest().run()
     
@@ -62,6 +65,7 @@ def get_pipeline_stages() -> dict:
     def run_affiliate(): AffiliateAnalysis().run()
     def run_handle(): HandleCorrelation().run()
     def run_reputation(): ReputationAnalysis().run()
+    def run_scoring(): ScoringStage().run()
 
     # 2. THE DAG DEFINITION
     return {
@@ -152,11 +156,18 @@ def get_pipeline_stages() -> dict:
             depends_on=["ner_extraction"],
             category="analysis"
         ),
-        # Reputation runs last because it aggregates everything
         "reputation_analysis": PipelineStage(
             name="reputation_analysis",
             action=run_reputation,
             depends_on=["behavioral_analysis", "affiliate_analysis", "handle_correlation"],
             category="analysis"
+        ),
+
+        # --- SCORING (Final Stage) ---
+        "threat_scoring": PipelineStage(
+            name="threat_scoring",
+            action=run_scoring,
+            depends_on=["reputation_analysis", "api_enrichment", "infrastructure_mapper", "geo_correlation"],
+            category="scoring"
         ),
     }
