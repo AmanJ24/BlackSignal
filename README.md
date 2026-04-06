@@ -54,55 +54,55 @@ BlackSignal is a **DAG-based, unidirectional pipeline** — not a collection of 
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                          COLLECTION (Parallel)                         │
-│  ┌──────────────┐ ┌───────────────┐ ┌──────────────┐ ┌─────────────┐  │
-│  │ Tor Relay    │ │ .onion        │ │ Marketplace  │ │ STIX/TAXII  │  │
-│  │ Inventory    │ │ Discovery     │ │ Scraper      │ │ Feed Ingest │  │
-│  └──────────────┘ └───────────────┘ └──────────────┘ └─────────────┘  │
+│                          COLLECTION (Parallel)                          │
+│  ┌──────────────┐ ┌───────────────┐ ┌──────────────┐ ┌─────────────┐    │
+│  │ Tor Relay    │ │ .onion        │ │ Marketplace  │ │ STIX/TAXII  │    │
+│  │ Inventory    │ │ Discovery     │ │ Scraper      │ │ Feed Ingest │    │
+│  └──────────────┘ └───────────────┘ └──────────────┘ └─────────────┘    │
 └───────────────────────────────┬─────────────────────────────────────────┘
                                 │ data/raw/*.json
                                 ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                         PROCESSING (Parallel)                          │
-│  ┌──────────────┐ ┌───────────────┐ ┌──────────────┐                  │
-│  │ IOC Extract  │ │ Hash Extract  │ │ NER Extract  │                  │
-│  │ (IPs, BTC,   │ │ (MD5, SHA1,   │ │ (People, Org │                  │
-│  │  Emails)     │ │  SHA256)      │ │  Locations)  │                  │
-│  └──────────────┘ └───────────────┘ └──────────────┘                  │
+│                         PROCESSING (Parallel)                           │
+│  ┌──────────────┐ ┌───────────────┐ ┌──────────────┐                    │
+│  │ IOC Extract  │ │ Hash Extract  │ │ NER Extract  │                    │
+│  │ (IPs, BTC,   │ │ (MD5, SHA1,   │ │ (People, Org │                    │
+│  │  Emails)     │ │  SHA256)      │ │  Locations)  │                    │
+│  └──────────────┘ └───────────────┘ └──────────────┘                    │
 └───────────────────────────────┬─────────────────────────────────────────┘
                                 │ data/normalized/*.json
                                 ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                         ENRICHMENT (Parallel)                          │
-│  ┌──────────────┐ ┌───────────────┐ ┌──────────────┐                  │
-│  │ VirusTotal   │ │ Shodan /      │ │ Geo-IP       │                  │
-│  │ AbuseIPDB    │ │ BGPView       │ │ Correlation  │                  │
-│  └──────────────┘ └───────────────┘ └──────────────┘                  │
+│                         ENRICHMENT (Parallel)                           │ 
+│  ┌──────────────┐ ┌───────────────┐ ┌──────────────┐                    │
+│  │ VirusTotal   │ │ Shodan /      │ │ Geo-IP       │                    │
+│  │ AbuseIPDB    │ │ BGPView       │ │ Correlation  │                    │
+│  └──────────────┘ └───────────────┘ └──────────────┘                    │
 └───────────────────────────────┬─────────────────────────────────────────┘
                                 │ data/enriched/*.json
                                 ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                          ANALYSIS (Parallel)                           │
-│  ┌──────────────┐ ┌───────────────┐ ┌──────────────┐ ┌─────────────┐  │
-│  │ Behavioral   │ │ MITRE ATT&CK  │ │ Affiliate /  │ │ Handle      │  │
-│  │ Profiling    │ │ TTP Mapping   │ │ RaaS Detect  │ │ Correlation │  │
-│  └──────────────┘ └───────────────┘ └──────────────┘ └─────────────┘  │
-│                           │                                            │
-│                   ┌───────▼────────┐                                   │
-│                   │  Reputation    │                                   │
-│                   │  Aggregation   │                                   │
-│                   └────────────────┘                                   │
+│                          ANALYSIS (Parallel)                            │
+│  ┌──────────────┐ ┌───────────────┐ ┌──────────────┐ ┌─────────────┐    │
+│  │ Behavioral   │ │ MITRE ATT&CK  │ │ Affiliate /  │ │ Handle      │    │
+│  │ Profiling    │ │ TTP Mapping   │ │ RaaS Detect  │ │ Correlation │    │
+│  └──────────────┘ └───────────────┘ └──────────────┘ └─────────────┘    │
+│                           │                                             │
+│                   ┌───────▼────────┐                                    │
+│                   │  Reputation    │                                    │
+│                   │  Aggregation   │                                    │
+│                   └────────────────┘                                    │
 └───────────────────────────────┬─────────────────────────────────────────┘
                                 │ data/intelligence/*.json
                                 ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                       SCORING (Final Stage)                            │
-│  ┌─────────────────────────────────────────────────────────────────┐   │
-│  │ Confidence-Weighted Threat Scoring Engine                      │   │
-│  │ Input: all enriched + intelligence evidence                    │   │
-│  │ Output: 0-100 score, severity (LOW/MED/HIGH/CRITICAL),        │   │
-│  │         per-signal breakdown with confidence intervals         │   │
-│  └─────────────────────────────────────────────────────────────────┘   │
+│                       SCORING (Final Stage)                             │
+│  ┌─────────────────────────────────────────────────────────────────┐    │
+│  │ Confidence-Weighted Threat Scoring Engine                       │    │
+│  │ Input: all enriched + intelligence evidence                     │    │
+│  │ Output: 0-100 score, severity (LOW/MED/HIGH/CRITICAL),          │    │
+│  │         per-signal breakdown with confidence intervals          │    │
+│  └─────────────────────────────────────────────────────────────────┘    │
 └───────────────────────────────┬─────────────────────────────────────────┘
                                 │ scored_intelligence_*.json
                                 ▼
