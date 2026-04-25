@@ -62,6 +62,8 @@ htmlcov/
 
 # --- Claude / AI tooling ---
 .claude/
+.mcp.json
+.opencode.json
 
 # --- Misc ---
 *.bak

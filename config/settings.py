@@ -2,9 +2,9 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Load secrets from .secrets.env
+# Load secrets from .env
 BASE_DIR = Path(__file__).resolve().parent.parent
-ENV_PATH = BASE_DIR / ".secrets.env"
+ENV_PATH = BASE_DIR / ".env"
 load_dotenv(ENV_PATH)
 
 # --- PATHS ---

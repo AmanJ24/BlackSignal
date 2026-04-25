@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  tor:
+    image: dperson/torproxy
+    container_name: blacksignal-tor
+    environment:
+      - TOR_PASSWORD=${TOR_PASSWORD:-TorRelay123}
+    ports:
+      - "9050:9050" # SOCKS proxy
+      - "9051:9051" # Control port
+    restart: unless-stopped
+    command: -p ${TOR_PASSWORD:-TorRelay123}
+
+  app:
+    build: .
+    container_name: blacksignal-app
+    depends_on:
+      - tor
+    environment:
+      - TOR_SOCKS_HOST=tor
+      - TOR_SOCKS_PORT=9050
+      - TOR_CONTROL_PORT=9051
+      - TOR_PASSWORD=${TOR_PASSWORD:-TorRelay123}
+      - VIRUSTOTAL_API_KEY=${VIRUSTOTAL_API_KEY}
+      - ABUSEIPDB_API_KEY=${ABUSEIPDB_API_KEY}
+      - SHODAN_API_KEY=${SHODAN_API_KEY}
+      - FLASK_ENV=${FLASK_ENV:-development}
+      - FLASK_SECRET_KEY=${FLASK_SECRET_KEY:-blacksignal-secret}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:8080}
+      - DASHBOARD_USER=${DASHBOARD_USER}
+      - DASHBOARD_PASSWORD=${DASHBOARD_PASSWORD}
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    restart: on-failure
+    command: python web/app.py
+
+  pipeline:
+    build: .
+    container_name: blacksignal-pipeline
+    depends_on:
+      - tor
+    environment:
+      - TOR_SOCKS_HOST=tor
+      - TOR_SOCKS_PORT=9050
+      - TOR_CONTROL_PORT=9051
+      - TOR_PASSWORD=${TOR_PASSWORD:-TorRelay123}
+      - VIRUSTOTAL_API_KEY=${VIRUSTOTAL_API_KEY}
+      - ABUSEIPDB_API_KEY=${ABUSEIPDB_API_KEY}
+      - SHODAN_API_KEY=${SHODAN_API_KEY}
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    # Starts the pipeline once; run manually or set up a cron
+    command: python orchestration/run_pipeline.py
+    profiles: ["pipeline-run"]

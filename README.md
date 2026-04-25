@@ -46,6 +46,18 @@ BlackSignal doesn't just "scrape the dark web" — it generates **actionable int
 
 ---
 
+## Skills & Technologies Demonstrated
+
+This project is an end-to-end Cyber Threat Intelligence (CTI) platform, built to showcase practical intersections between software engineering and security operations. It demonstrates:
+
+- **Systems Architecture & Data Engineering**: Designing DAG-based, unidirectional parallel processing pipelines with explicit fault tolerance and fail-fast guarantees.
+- **Offensive Security & OSINT**: Automating safe Tor interactions, extracting structured IOCs from dark web marketplaces, and profiling TTPs against the **MITRE ATT&CK** framework.
+- **Machine Learning & NLP**: Utilizing Named Entity Recognition (**spaCy**) for extracting handles, vendors, and targets from unstructured forum posts.
+- **Full Stack Development**: Orchestrating backend analytics with live WebSockets, delivering real-time visualizations via a **Flask** monitoring dashboard.
+- **Production DevOps**: Containerized deployment patterns utilizing **Docker Compose** and **Makefiles** for reproducible environments.
+
+---
+
 ## Architecture
 
 BlackSignal is a **DAG-based, unidirectional pipeline** — not a collection of scripts. Each stage has strict data contracts, explicit dependencies, and isolated execution.
@@ -196,21 +208,26 @@ BlackSignal/
 
 ### Installation
 
+**Option 1: Using Make (Local Setup)**
 ```bash
 git clone https://github.com/AmanJ24/BlackSignal
 cd BlackSignal
 
-chmod +x setup.sh
-./setup.sh
+make install
 ```
-
 This creates a virtual environment, installs dependencies, and downloads NLP models.
+
+**Option 2: Using Docker (Recommended)**
+```bash
+docker-compose up -d
+```
+This builds and runs the application and a Tor daemon in isolated containers.
 
 ### Configuration
 
 ```bash
-cp .secrets.env.example .secrets.env
-# Edit .secrets.env with your API keys and Tor password
+cp .env.example .env
+# Edit .env with your API keys and Tor password
 ```
 
 | Variable | Required | Purpose |
@@ -230,8 +247,11 @@ cp .secrets.env.example .secrets.env
 ### Run the Pipeline (CLI)
 
 ```bash
-source venv/bin/activate
-python orchestration/run_pipeline.py
+# Locally:
+make run
+
+# via Docker:
+docker-compose --profile pipeline-run up blacksignal-pipeline
 ```
 
 Output:
@@ -249,8 +269,10 @@ Output:
 ### Run the Dashboard
 
 ```bash
-source venv/bin/activate
-python web/app.py
+# Locally:
+make web
+
+# If using Docker, the dashboard runs automatically on startup.
 # Open http://localhost:8080
 ```
 
@@ -262,8 +284,7 @@ Features:
 ### Run Tests
 
 ```bash
-source venv/bin/activate
-python -m pytest tests/ -v
+make test
 ```
 
 ---
@@ -296,7 +317,7 @@ Threat Score = Σ (signal_confidence × category_weight × 10)
 - ✅ No silent clearnet fallback — if Tor fails, collection halts
 - ✅ Dashboard supports optional HTTP Basic Auth  
 - ✅ Path traversal protection on data API endpoints
-- ✅ Secrets loaded from `.secrets.env` (gitignored)
+- ✅ Secrets loaded from `.env` (gitignored)
 - ✅ SECRET_KEY auto-generated if not set
 
 ---
