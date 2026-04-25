@@ -1,0 +1,4 @@
+FROM alpine:latest
+RUN apk add --no-cache tor
+USER tor
+CMD ["tor", "--SocksPort", "0.0.0.0:9050", "--ControlPort", "0.0.0.0:9051", "--HashedControlPassword", "16:1D966DCF1D8D882B603C9FD347B62E53D7B9B572274EF386203E452F51"]

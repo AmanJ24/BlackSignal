@@ -35,7 +35,19 @@ class RelayInventory:
             logger.info("📡 Fetching Tor Network Consensus...")
             
             # Now safe to call
-            relays = self.tm._controller.get_network_statuses()
+            relays = None
+            for attempt in range(12):
+                try:
+                    relays = self.tm._controller.get_network_statuses()
+                    break
+                except Exception as e:
+                    if "unavailable" in str(e).lower():
+                        logger.info(f"⏳ Waiting for Tor descriptors (attempt {attempt+1}/12)...")
+                        time.sleep(5)
+                    else:
+                        raise e
+            if relays is None:
+                raise RuntimeError("Failed to fetch descriptors: Tor is not fully bootstrapped.")
             
             inventory = []
             for relay in relays:
@@ -50,6 +62,7 @@ class RelayInventory:
 
         except Exception as e:
             logger.critical(f"❌ Relay inventory failed: {e}")
+            raise
 
     def _save_results(self, data):
         timestamp = datetime.utcnow().isoformat()

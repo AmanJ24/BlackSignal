@@ -46,6 +46,7 @@ class OnionCrawler:
             
         except Exception as e:
             logger.critical(f"🔥 Critical Crawl Failure: {e}")
+            raise
 
     def _crawl(self, url, depth):
         if depth > self.max_depth: return

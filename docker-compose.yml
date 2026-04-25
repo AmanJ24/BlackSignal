@@ -2,15 +2,13 @@ version: '3.8'
 
 services:
   tor:
-    image: dperson/torproxy
+    build:
+      context: .
+      dockerfile: Dockerfile.tor
     container_name: blacksignal-tor
-    environment:
-      - TOR_PASSWORD=${TOR_PASSWORD:-TorRelay123}
     ports:
-      - "9050:9050" # SOCKS proxy
-      - "9051:9051" # Control port
-    restart: unless-stopped
-    command: -p ${TOR_PASSWORD:-TorRelay123}
+      - "9050:9050"
+      - "9051:9051"
 
   app:
     build: .

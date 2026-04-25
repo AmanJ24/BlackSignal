@@ -39,6 +39,7 @@ class MarketScraper:
             
         except Exception as e:
             logger.critical(f"🔥 Scrape failed: {e}")
+            raise
 
     def _fetch_page(self, url):
         attempts = 0

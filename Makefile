@@ -24,7 +24,7 @@ $(VENV)/bin/activate: requirements.txt
 	$(PIP) install -r requirements.txt
 	@touch $(VENV)/bin/activate
 
-install: $(VENV)/bin/activate
+.setup_done: $(VENV)/bin/activate
 	@echo "🚀 Starting Dark Web OSINT Platform Setup..."
 	@echo "🧠 Downloading NLP Models (spaCy & TextBlob)..."
 	$(PYTHON) -m spacy download en_core_web_sm
@@ -32,6 +32,9 @@ install: $(VENV)/bin/activate
 	@echo "📂 Creating Data Directory Structure..."
 	mkdir -p data/raw data/normalized data/enriched data/intelligence logs
 	@echo "✅ Setup Complete!"
+	@touch .setup_done
+
+install: .setup_done
 
 run: install
 	$(PYTHON) orchestration/run_pipeline.py
