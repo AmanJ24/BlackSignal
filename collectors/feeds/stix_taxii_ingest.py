@@ -12,7 +12,8 @@ except ImportError:
     import config
 
 logger = logging.getLogger("STIXIngest")
-logging.basicConfig(level=logging.INFO)
+
+from core.tor.tor_manager import TorManager
 
 class STIXIngest:
     """
@@ -23,11 +24,36 @@ class STIXIngest:
         # Add other free feeds here
     }
 
+    def __init__(self):
+        self.tm = TorManager(
+            control_port=config.TOR_CONTROL_PORT,
+            socks_proxy_host=config.TOR_SOCKS_HOST,
+            socks_proxy_port=config.TOR_SOCKS_PORT,
+            control_password=config.TOR_PASSWORD
+        )
+        self.session = None
+        self._init_session()
+
+    def _init_session(self):
+        try:
+            self.tm.ensure_alive()
+            self.session = self.tm.session(purpose="stix_ingest")
+            logger.info("🛡️  Tor Session established for STIX Ingest")
+        except Exception as e:
+            logger.warning(f"⚠️ Tor connection failed for STIX Ingest: {e}")
+            if getattr(config, "ALLOW_CLEARNET_FALLBACK", False):
+                logger.info("Fallback: using direct clearnet connection.")
+                self.session = requests.Session()
+                self.session.headers.update({"User-Agent": "DarkWeb-OSINT-Pipeline/2.0"})
+            else:
+                logger.critical("🛑 Tor is required but unreachable. Aborting STIX ingest.")
+                raise RuntimeError("Tor unreachable for STIX Ingest")
+
     def run(self):
         for name, url in self.FEEDS.items():
             try:
                 logger.info(f"📥 Fetching feed: {name}")
-                resp = requests.get(url, timeout=30)
+                resp = self.session.get(url, timeout=30)
                 
                 if resp.status_code == 200:
                     data = resp.json()

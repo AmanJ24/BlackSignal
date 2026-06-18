@@ -3,6 +3,7 @@ import os
 import json
 import logging
 import time
+import requests
 from urllib.parse import urljoin, urlparse
 from bs4 import BeautifulSoup
 import re
@@ -16,7 +17,6 @@ from core.tor.tor_manager import TorManager
 import config.settings as config
 
 logger = logging.getLogger("OnionCrawler")
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 class OnionCrawler:
     def __init__(self, start_urls, max_depth=2):
@@ -36,8 +36,16 @@ class OnionCrawler:
 
     def start(self):
         try:
-            self.tm.ensure_alive()
-            logger.info(f"🛡️  Tor Connection Verified.")
+            try:
+                self.tm.ensure_alive()
+                logger.info(f"🛡️  Tor Connection Verified.")
+            except Exception as e:
+                if getattr(config, "ALLOW_CLEARNET_FALLBACK", False):
+                    logger.warning("⚠️ Tor connection failed. Fallback: using direct clearnet connection.")
+                    self.session = requests.Session()
+                    self.session.headers.update({"User-Agent": "DarkWeb-OSINT-Pipeline/2.0"})
+                else:
+                    raise e
             
             for url in self.start_urls:
                 self._crawl(url, depth=0)
@@ -45,8 +53,11 @@ class OnionCrawler:
             self._save_results()
             
         except Exception as e:
-            logger.critical(f"🔥 Critical Crawl Failure: {e}")
-            raise
+            if getattr(config, "ALLOW_CLEARNET_FALLBACK", False):
+                logger.warning(f"⚠️ Crawl failed but clearnet fallback is enabled: {e}")
+            else:
+                logger.critical(f"🔥 Critical Crawl Failure: {e}")
+                raise
 
     def _crawl(self, url, depth):
         if depth > self.max_depth: return

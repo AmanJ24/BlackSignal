@@ -12,7 +12,6 @@ except ImportError:
     import config
 
 logger = logging.getLogger("HandleCorrelation")
-logging.basicConfig(level=logging.INFO)
 
 class HandleCorrelation:
     def __init__(self):
@@ -30,7 +29,13 @@ class HandleCorrelation:
         # Process Normalized Entities (Output of NER)
         files = glob.glob(os.path.join(config.BASE_DIR, "data", "normalized", "normalized_entities_*.json"))
         
+        from core.state_tracker import StateTracker
+        tracker = StateTracker(config.STATE_DB_PATH)
+
         for file_path in files:
+            if tracker.is_processed("handle_correlation", file_path):
+                continue
+
             with open(file_path, 'r') as f:
                 content = json.load(f)
             
@@ -52,6 +57,9 @@ class HandleCorrelation:
 
             if analyzed_handles:
                 self._save(analyzed_handles, os.path.basename(file_path))
+
+            # Mark processed in StateTracker
+            tracker.mark_processed("handle_correlation", file_path)
 
     def _save(self, data, source):
         output = {

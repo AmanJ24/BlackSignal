@@ -2,6 +2,8 @@ import time
 import requests
 from .utils import BaseEnricher
 
+from config import settings as config
+
 class GeoCorrelator(BaseEnricher):
     def __init__(self):
         super().__init__("Geo_Correlator")
@@ -23,12 +25,15 @@ class GeoCorrelator(BaseEnricher):
             
             if enriched_items:
                 self.save_enriched(enriched_items, file_path)
+            else:
+                from core.state_tracker import StateTracker
+                StateTracker(config.STATE_DB_PATH).mark_processed(self.name, file_path)
 
     def _lookup_ip_api(self, ip):
         try:
             # IP-API (Free) limits to 45 requests per minute
             time.sleep(1.5) 
-            resp = requests.get(f"http://ip-api.com/json/{ip}", timeout=5)
+            resp = self.session.get(f"http://ip-api.com/json/{ip}", timeout=5)
             
             if resp.status_code == 200:
                 data = resp.json()

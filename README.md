@@ -4,7 +4,7 @@
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://python.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-29%20passing-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/tests-32%20passing-brightgreen.svg)]()
 
 ---
 
@@ -125,9 +125,12 @@ BlackSignal is a **DAG-based, unidirectional pipeline** — not a collection of 
 
 - **DAG execution** — Stages run in parallel; dependencies are explicit, not inferred from file names
 - **Fail-fast for critical stages** — If collection or scoring fails, the pipeline halts. Non-critical failures are skipped gracefully
-- **Tor-first networking** — All dark web access routes through `TorManager` with per-purpose circuit isolation. No silent clearnet fallback
+- **Tor-first networking** — All dark web access routes through `TorManager` with per-purpose circuit isolation. Clearnet fallback is configurable via `ALLOW_CLEARNET_FALLBACK` (enabled by default for development; disable for production)
 - **Data flows forward only** — Raw → Normalized → Enriched → Intelligence → Scored. No stage mutates upstream data
 - **Evidence-based scoring** — Every threat score is decomposable: you can trace exactly _why_ an entity scored 87/100
+- **Incremental run caching** — Evaluates file hashes and pipeline stages using SQLite to avoid redundant work and speed up subsequent executions
+- **Smart routing bypass** — Skips Tor network consensus routing nodes during IOC/hash extraction, bypassing high-volume public telemetry noise and preventing frontend DOM bloat
+- **Cooperative WebSockets** — Employs Eventlet monkey-patched threads and native Socket.IO tasks to stream pipeline logs in real-time, line-by-line
 
 ---
 
@@ -177,7 +180,9 @@ BlackSignal/
 │
 ├── web/
 │   ├── app.py                  # Flask + SocketIO dashboard server
-│   └── templates/dashboard.html # Live pipeline UI
+│   └── templates/
+│       ├── landing.html        # Landing page with DAG visualizer
+│       └── dashboard.html      # Live pipeline control console
 │
 ├── data/                       # Pipeline data (gitignored)
 │   ├── raw/                    # Stage 1 output
@@ -185,14 +190,16 @@ BlackSignal/
 │   ├── enriched/               # Stage 3 output
 │   └── intelligence/           # Stage 4+5 output (includes scored results)
 │
-├── tests/                      # pytest test suite (29 tests)
+├── tests/                      # pytest test suite (32 tests)
 │   ├── test_scoring_engine.py  # ScoringEngine unit tests
-│   └── test_extractors.py      # IOC + Hash pattern tests
+│   ├── test_extractors.py      # IOC + Hash pattern tests
+│   ├── test_state_tracker.py   # Cache database unit tests
+│   └── test_reputation.py      # Reputation aggregation tests
 │
 ├── config/settings.py          # Runtime config + env loading
 ├── requirements.txt            # Python dependencies
-├── setup.sh                    # One-command setup script
-└── .secrets.env.example        # Template for API keys and credentials
+├── Makefile                    # Build automation (install, run, test, clean)
+└── .env.example                # Template for API keys and credentials
 ```
 
 ---
@@ -219,7 +226,7 @@ This creates a virtual environment, installs dependencies, and downloads NLP mod
 
 **Option 2: Using Docker (Recommended)**
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 This builds and runs the application and a Tor daemon in isolated containers.
 
@@ -233,6 +240,7 @@ cp .env.example .env
 | Variable | Required | Purpose |
 |----------|----------|---------|
 | `TOR_PASSWORD` | ✅ | Tor control port authentication |
+| `ALLOW_CLEARNET_FALLBACK` | ❌ | Set to `True` (default) to allow direct connections when Tor is unavailable. Set to `False` for production to enforce Tor-only networking |
 | `VIRUSTOTAL_API_KEY` | ❌ | Hash reputation lookups |
 | `ABUSEIPDB_API_KEY` | ❌ | IP abuse scoring |
 | `SHODAN_API_KEY` | ❌ | Infrastructure reconnaissance |
@@ -251,7 +259,7 @@ cp .env.example .env
 make run
 
 # via Docker:
-docker-compose --profile pipeline-run up blacksignal-pipeline
+docker compose --profile pipeline-run up blacksignal-pipeline
 ```
 
 Output:
@@ -314,7 +322,7 @@ Threat Score = Σ (signal_confidence × category_weight × 10)
 
 - ✅ All dark web traffic routed through Tor with per-purpose circuit isolation
 - ✅ Circuit renewal (`NEWNYM`) supported for long-running operations
-- ✅ No silent clearnet fallback — if Tor fails, collection halts
+- ✅ Configurable Tor enforcement — `ALLOW_CLEARNET_FALLBACK=False` enforces Tor-only networking (recommended for production)
 - ✅ Dashboard supports optional HTTP Basic Auth  
 - ✅ Path traversal protection on data API endpoints
 - ✅ Secrets loaded from `.env` (gitignored)

@@ -12,7 +12,6 @@ except ImportError:
     import config
 
 logger = logging.getLogger("MITREMapper")
-logging.basicConfig(level=logging.INFO)
 
 class MITREMapper:
     # Simplified mapping for demonstration. Real implementation needs a larger DB.
@@ -26,7 +25,13 @@ class MITREMapper:
         # Reads RAW scraper data
         files = glob.glob(os.path.join(config.BASE_DIR, "data", "raw", "scrape_*.json"))
         
+        from core.state_tracker import StateTracker
+        tracker = StateTracker(config.STATE_DB_PATH)
+
         for file_path in files:
+            if tracker.is_processed("mitre_mapping", file_path):
+                continue
+
             with open(file_path, 'r') as f:
                 content = json.load(f)
             
@@ -52,10 +57,21 @@ class MITREMapper:
             if analyzed_items:
                 self._save(analyzed_items, os.path.basename(file_path))
 
+            # Mark processed in StateTracker
+            tracker.mark_processed("mitre_mapping", file_path)
+
     def _save(self, data, source):
         path = os.path.join(config.BASE_DIR, "data", "intelligence", f"intel_mitre_{int(time.time())}_{source}")
+        output = {
+            "meta": {
+                "feature": "mitre_mapping",
+                "source": source,
+                "timestamp": int(time.time())
+            },
+            "data": data
+        }
         with open(path, 'w') as f:
-            json.dump({"data": data}, f, indent=4)
+            json.dump(output, f, indent=4)
         logger.info(f"✅ Mapped TTPs for {len(data)} items -> {path}")
 
 if __name__ == "__main__":

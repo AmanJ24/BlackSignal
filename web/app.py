@@ -1,11 +1,14 @@
+import eventlet
+eventlet.monkey_patch()
+
 import os
 import sys
 import json
 import glob
 import subprocess
-import threading
 import time
 import secrets
+import logging
 from functools import wraps
 from flask import Flask, render_template, jsonify, request, Response
 from flask_socketio import SocketIO, emit
@@ -17,6 +20,8 @@ try:
     from config import settings as config
 except ImportError:
     import config
+
+logger = logging.getLogger("WebDashboard")
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY', secrets.token_hex(32))
@@ -62,14 +67,24 @@ PIPELINE_STATUS = {
 # --- ROUTES ---
 
 @app.route('/')
-@require_auth
 def index():
+    return render_template('landing.html')
+
+@app.route('/dashboard')
+@require_auth
+def dashboard():
     return render_template('dashboard.html')
 
 @app.route('/api/status')
 @require_auth
 def status():
-    return jsonify(PIPELINE_STATUS)
+    status_data = PIPELINE_STATUS.copy()
+    status_data["api_keys"] = {
+        "virustotal": bool(config.VIRUSTOTAL_API_KEY),
+        "abuseipdb": bool(config.ABUSEIPDB_API_KEY),
+        "shodan": bool(config.SHODAN_API_KEY)
+    }
+    return jsonify(status_data)
 
 @app.route('/api/data/<category>')
 @require_auth
@@ -93,17 +108,49 @@ def get_data(category):
     results = []
     # Limit to top 20 recent files to prevent browser crash
     for f in files[:20]:
-        with open(f, 'r') as file_handle:
-            try:
+        try:
+            with open(f, 'r') as file_handle:
                 content = json.load(file_handle)
                 results.append({
                     "filename": os.path.basename(f),
                     "content": content
                 })
-            except json.JSONDecodeError:
-                pass
+        except json.JSONDecodeError as e:
+            logger.warning(f"Skipping malformed JSON file {os.path.basename(f)}: {e}")
+        except OSError as e:
+            logger.warning(f"Failed to read file {os.path.basename(f)}: {e}")
     
-    return jsonify({"category": category, "count": len(results), "data": results})
+    # Flatten items into flat_data to prevent Alpine nested template lag
+    flat_data = []
+    for f in results:
+        file_data = f["content"].get("data", [])
+        if isinstance(file_data, list):
+            for item in file_data:
+                if isinstance(item, dict):
+                    if category == "intelligence":
+                        item_copy = item.copy()
+                        item_copy["source_file"] = f["filename"]
+                        flat_data.append(item_copy)
+                    else:
+                        item_copy = item.copy()
+                        item_copy["source_file"] = item_copy.get("source_file") or item_copy.get("source") or f["filename"]
+                        flat_data.append(item_copy)
+                elif isinstance(item, str):
+                    flat_data.append({
+                        "id": item,
+                        "type": "raw_string",
+                        "source_file": f["filename"]
+                    })
+    
+    # Cap flat_data to 150 items to ensure instant rendering
+    flat_data = flat_data[:150]
+    
+    return jsonify({
+        "category": category, 
+        "count": len(results), 
+        "data": results,
+        "flat_data": flat_data
+    })
 
 @app.route('/api/run', methods=['POST'])
 @require_auth
@@ -111,10 +158,8 @@ def run_pipeline():
     if PIPELINE_STATUS["running"]:
         return jsonify({"status": "error", "message": "Pipeline already running"})
     
-    # Start the pipeline in a background thread
-    thread = threading.Thread(target=execute_pipeline_script)
-    thread.daemon = True
-    thread.start()
+    # Start the pipeline in a background task
+    socketio.start_background_task(execute_pipeline_script)
     
     return jsonify({"status": "success", "message": "Pipeline started"})
 
@@ -128,33 +173,69 @@ def execute_pipeline_script():
 
     script_path = os.path.join(config.BASE_DIR, "orchestration", "run_pipeline.py")
     
-    process = subprocess.Popen(
-        [sys.executable, '-u', script_path],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-        bufsize=1
-    )
+    # Verify the pipeline script exists before attempting to run it
+    if not os.path.exists(script_path):
+        error_msg = f"❌ Pipeline script not found at {script_path}"
+        logger.error(error_msg)
+        PIPELINE_STATUS["logs"].append(error_msg)
+        PIPELINE_STATUS["running"] = False
+        PIPELINE_STATUS["stage"] = "Failed"
+        socketio.emit('log_update', {'log': error_msg})
+        socketio.emit('status_update', {"status": "completed"})
+        return
 
-    # Stream logs
-    if process.stdout:
-        for line in iter(process.stdout.readline, ''):
-            log_entry = line.strip()
-            if log_entry:
-                # Simple heuristic to update stage based on logs
-                if "Starting Stage:" in log_entry:
-                    PIPELINE_STATUS["stage"] = log_entry.split("Starting Stage:")[-1].strip()
-                
-                PIPELINE_STATUS["logs"].append(log_entry)
-                socketio.emit('log_update', {'log': log_entry})
-                
-                # Keep log buffer manageable
-                if len(PIPELINE_STATUS["logs"]) > 500:
-                    PIPELINE_STATUS["logs"].pop(0)
+    try:
+        process = subprocess.Popen(
+            [sys.executable, '-u', script_path],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1
+        )
 
-    process.wait()
+        # Stream logs
+        if process.stdout:
+            for line in iter(process.stdout.readline, ''):
+                log_entry = line.strip()
+                if log_entry:
+                    # Simple heuristic to update stage based on logs
+                    if "Starting Stage:" in log_entry:
+                        PIPELINE_STATUS["stage"] = log_entry.split("Starting Stage:")[-1].strip()
+                    
+                    PIPELINE_STATUS["logs"].append(log_entry)
+                    socketio.emit('log_update', {'log': log_entry})
+                    socketio.sleep(0.01)  # Yield to eventlet to stream immediately
+                    
+                    # Keep log buffer manageable
+                    if len(PIPELINE_STATUS["logs"]) > 500:
+                        PIPELINE_STATUS["logs"].pop(0)
+
+        process.wait()
+        
+        # Check exit code to detect failures
+        if process.returncode != 0:
+            error_msg = f"⚠️ Pipeline exited with code {process.returncode}"
+            logger.warning(error_msg)
+            PIPELINE_STATUS["logs"].append(error_msg)
+            PIPELINE_STATUS["stage"] = "Failed"
+            socketio.emit('log_update', {'log': error_msg})
+        else:
+            PIPELINE_STATUS["stage"] = "Completed"
+
+    except FileNotFoundError as e:
+        error_msg = f"❌ Failed to start pipeline: Python interpreter not found: {e}"
+        logger.error(error_msg)
+        PIPELINE_STATUS["logs"].append(error_msg)
+        PIPELINE_STATUS["stage"] = "Failed"
+        socketio.emit('log_update', {'log': error_msg})
+    except Exception as e:
+        error_msg = f"❌ Pipeline execution error: {e}"
+        logger.error(error_msg, exc_info=True)
+        PIPELINE_STATUS["logs"].append(error_msg)
+        PIPELINE_STATUS["stage"] = "Failed"
+        socketio.emit('log_update', {'log': error_msg})
+
     PIPELINE_STATUS["running"] = False
-    PIPELINE_STATUS["stage"] = "Completed"
     socketio.emit('status_update', {"status": "completed"})
 
 if __name__ == '__main__':

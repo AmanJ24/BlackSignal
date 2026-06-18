@@ -1,0 +1,13 @@
+{
+    "_comment": "Known threat actor handles for cross-reference correlation. Add entries as: \"handle_name\": {\"group\": \"group_name\", \"aliases\": [...], \"notes\": \"...\"}",
+    "lockbit_support": {
+        "group": "LockBit",
+        "aliases": ["lockbitsupp", "LockBit_Support"],
+        "notes": "Primary support handle for LockBit RaaS operation"
+    },
+    "darkside_admin": {
+        "group": "DarkSide",
+        "aliases": ["ds_admin"],
+        "notes": "Administrative handle for DarkSide ransomware group"
+    }
+}

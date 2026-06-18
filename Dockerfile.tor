@@ -1,4 +1,6 @@
 FROM alpine:latest
 RUN apk add --no-cache tor
+HEALTHCHECK --interval=15s --timeout=5s --start-period=30s --retries=3 \
+    CMD echo "GETINFO status/circuit-established" | nc -w 2 127.0.0.1 9051 || exit 1
 USER tor
 CMD ["tor", "--SocksPort", "0.0.0.0:9050", "--ControlPort", "0.0.0.0:9051", "--HashedControlPassword", "16:1D966DCF1D8D882B603C9FD347B62E53D7B9B572274EF386203E452F51"]

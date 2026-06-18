@@ -3,6 +3,7 @@ import os
 import json
 import logging
 import time
+import requests
 from bs4 import BeautifulSoup
 from pathlib import Path
 
@@ -14,7 +15,6 @@ from core.tor.tor_manager import TorManager
 import config.settings as config
 
 logger = logging.getLogger("MarketScraper")
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 class MarketScraper:
     def __init__(self, target_url):
@@ -29,8 +29,16 @@ class MarketScraper:
 
     def run(self):
         try:
-            self.tm.ensure_alive()
-            logger.info(f"🛡️  Tor Circuit Established. Scraping: {self.target_url}")
+            try:
+                self.tm.ensure_alive()
+                logger.info(f"🛡️  Tor Circuit Established. Scraping: {self.target_url}")
+            except Exception as e:
+                if getattr(config, "ALLOW_CLEARNET_FALLBACK", False):
+                    logger.warning("⚠️ Tor connection failed. Fallback: using direct clearnet connection.")
+                    self.session = requests.Session()
+                    self.session.headers.update({"User-Agent": "DarkWeb-OSINT-Pipeline/2.0"})
+                else:
+                    raise e
             
             html = self._fetch_page(self.target_url)
             if html:
@@ -38,8 +46,11 @@ class MarketScraper:
                 self._save_results(items)
             
         except Exception as e:
-            logger.critical(f"🔥 Scrape failed: {e}")
-            raise
+            if getattr(config, "ALLOW_CLEARNET_FALLBACK", False):
+                logger.warning(f"⚠️ Scrape failed but clearnet fallback is enabled: {e}")
+            else:
+                logger.critical(f"🔥 Scrape failed: {e}")
+                raise
 
     def _fetch_page(self, url):
         attempts = 0

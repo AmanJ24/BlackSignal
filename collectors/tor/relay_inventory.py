@@ -13,7 +13,6 @@ from core.tor.tor_manager import TorManager
 import config.settings as config
 
 logger = logging.getLogger("RelayInventory")
-logging.basicConfig(level=logging.INFO)
 
 class RelayInventory:
     def __init__(self):
@@ -26,7 +25,14 @@ class RelayInventory:
 
     def run(self):
         try:
-            self.tm.connect()
+            try:
+                self.tm.connect()
+            except Exception as e:
+                if getattr(config, "ALLOW_CLEARNET_FALLBACK", False):
+                    logger.warning("⚠️ Tor Controller unreachable. Skipping relay inventory because clearnet fallback is enabled.")
+                    return
+                else:
+                    raise e
             
             # Explicit check to satisfy type checker and runtime safety
             if self.tm._controller is None:
@@ -38,7 +44,7 @@ class RelayInventory:
             relays = None
             for attempt in range(12):
                 try:
-                    relays = self.tm._controller.get_network_statuses()
+                    relays = list(self.tm._controller.get_network_statuses())
                     break
                 except Exception as e:
                     if "unavailable" in str(e).lower():
@@ -61,8 +67,11 @@ class RelayInventory:
             self._save_results(inventory)
 
         except Exception as e:
-            logger.critical(f"❌ Relay inventory failed: {e}")
-            raise
+            if getattr(config, "ALLOW_CLEARNET_FALLBACK", False):
+                logger.warning(f"⚠️ Relay inventory failed but clearnet fallback is enabled: {e}")
+            else:
+                logger.critical(f"❌ Relay inventory failed: {e}")
+                raise
 
     def _save_results(self, data):
         timestamp = datetime.utcnow().isoformat()

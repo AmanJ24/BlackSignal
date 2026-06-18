@@ -13,7 +13,6 @@ except ImportError:
     import config
 
 logger = logging.getLogger("IOCExtractor")
-logging.basicConfig(level=logging.INFO)
 
 class IOCExtractor:
     """
@@ -47,7 +46,16 @@ class IOCExtractor:
             logger.warning("⚠️ No raw data files found to process.")
             return
 
+        from core.state_tracker import StateTracker
+        tracker = StateTracker(config.STATE_DB_PATH)
+
         for file_path in files:
+            if "tor_relays" in os.path.basename(file_path):
+                logger.info(f"⏭️  Skipping Tor relays consensus file: {os.path.basename(file_path)}")
+                continue
+            if tracker.is_processed("ioc_extractor", file_path):
+                logger.info(f"⏭️  Skipping already processed raw file: {os.path.basename(file_path)}")
+                continue
             logger.info(f"🔍 Processing: {os.path.basename(file_path)}")
             self._process_file(file_path)
 
@@ -81,6 +89,10 @@ class IOCExtractor:
 
             if extracted_iocs:
                 self._save_normalized(extracted_iocs, os.path.basename(file_path))
+
+            # Mark processed in SQLite DB to prevent redundant execution
+            from core.state_tracker import StateTracker
+            StateTracker(config.STATE_DB_PATH).mark_processed("ioc_extractor", file_path)
 
         except Exception as e:
             logger.error(f"❌ Failed to process {file_path}: {e}")

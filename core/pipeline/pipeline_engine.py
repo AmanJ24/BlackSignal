@@ -12,8 +12,9 @@ class PipelineEngine:
     def __init__(self, fail_fast: bool = True):
         self.stages = get_pipeline_stages()
         self.fail_fast = fail_fast
-        # Create an event flag for every stage
-        self.completion_events = {name: asyncio.Event() for name in self.stages}
+        # Note: completion_events are created in run() to ensure
+        # they are bound to the active event loop.
+        self.completion_events: dict = {}
         # Track failed stages for downstream decision-making
         self.failed_stages: set = set()
         self.stage_results: dict = {}
@@ -71,6 +72,11 @@ class PipelineEngine:
         """
         Main entry point to run the whole graph.
         """
+        # Create event flags inside the running event loop
+        self.completion_events = {name: asyncio.Event() for name in self.stages}
+        self.failed_stages.clear()
+        self.stage_results.clear()
+
         logger.info("🎬 Starting OSINT Pipeline...")
         start_global = time.time()
 
@@ -82,6 +88,10 @@ class PipelineEngine:
             # Collect critical failure messages
             for exc in eg.exceptions:
                 logger.critical(f"Pipeline aborted: {exc}")
+        except* Exception as eg:
+            # Catch any other unexpected errors from stages
+            for exc in eg.exceptions:
+                logger.error(f"Unexpected pipeline error: {exc}", exc_info=exc)
 
         duration = round(time.time() - start_global, 2)
         

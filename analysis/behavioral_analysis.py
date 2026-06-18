@@ -13,14 +13,19 @@ except ImportError:
     import config
 
 logger = logging.getLogger("BehavioralAnalysis")
-logging.basicConfig(level=logging.INFO)
 
 class BehavioralAnalysis:
     def run(self):
         # Reads RAW scraper data because we need full text context
         files = glob.glob(os.path.join(config.BASE_DIR, "data", "raw", "scrape_*.json"))
         
+        from core.state_tracker import StateTracker
+        tracker = StateTracker(config.STATE_DB_PATH)
+
         for file_path in files:
+            if tracker.is_processed("behavioral_analysis", file_path):
+                continue
+
             with open(file_path, 'r') as f:
                 content = json.load(f)
             
@@ -60,11 +65,22 @@ class BehavioralAnalysis:
             if analyzed_items:
                 self._save(analyzed_items, os.path.basename(file_path))
 
+            # Mark processed in StateTracker
+            tracker.mark_processed("behavioral_analysis", file_path)
+
     def _save(self, data, source):
         # Save to Intelligence folder
         path = os.path.join(config.BASE_DIR, "data", "intelligence", f"intel_behavior_{int(time.time())}_{source}")
+        output = {
+            "meta": {
+                "feature": "behavioral_analysis",
+                "source": source,
+                "timestamp": int(time.time())
+            },
+            "data": data
+        }
         with open(path, 'w') as f:
-            json.dump({"data": data}, f, indent=4)
+            json.dump(output, f, indent=4)
         logger.info(f"✅ Analyzed behavior for {len(data)} items -> {path}")
 
 if __name__ == "__main__":

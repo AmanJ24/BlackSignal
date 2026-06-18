@@ -69,3 +69,13 @@ htmlcov/
 *.bak
 *.tmp
 *.orig
+
+# --- Pipeline State (regenerated each run) ---
+data/pipeline_state.db
+*.db
+
+# --- Setup Marker ---
+.setup_done
+
+# --- AI Tooling Config (repo-local) ---
+AGENTS.md

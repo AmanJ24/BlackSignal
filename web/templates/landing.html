@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlackSignal — Dark Web Threat Intelligence Pipeline</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="landing-wrap grid-bg">
+
+    <!-- Ambient Glow Backdrops -->
+    <div class="glow-container">
+        <div class="glow-sphere glow-1"></div>
+        <div class="glow-sphere glow-2"></div>
+        <div class="glow-sphere glow-3"></div>
+    </div>
+
+    <!-- Top Dashboard Navbar -->
+    <nav class="landing-navbar">
+        <a href="/" class="nav-brand">🕵️ BLACKSIGNAL</a>
+        <div class="nav-meta">
+            <span><span class="green-dot"></span> NODE_01: ONLINE</span>
+            <span>PORT: 8080</span>
+            <span>SOCKS5_ROUTE: 127.0.0.1:9050</span>
+        </div>
+    </nav>
+
+    <div class="landing-content">
+        <!-- Hero Section -->
+        <header class="landing-hero" style="margin-top: 4rem;">
+            <div class="status-tag">
+                <span class="status-dot" id="system-status-dot"></span>
+                <span id="system-status-text">CONNECTING TO GATEWAY...</span>
+            </div>
+            
+            <h1 class="landing-title" style="font-weight: 700; margin-top: 0.5rem; letter-spacing: -0.04em;">
+                BLACKSIGNAL
+            </h1>
+            
+            <p class="landing-desc" style="font-size: 1.15rem; max-width: 680px; text-align: center; color: var(--text-muted);">
+                Automated dark web threat intelligence, onion service crawling, and NLP incident extraction. Built for threat intelligence teams operating on the border of isolated onion networks.
+            </p>
+            
+            <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
+                <a href="/dashboard" class="btn btn-primary" style="box-shadow: 0 0 15px rgba(16, 185, 129, 0.25);">Open Operator Console →</a>
+                <a href="#pipeline-interactive" class="btn btn-secondary">Inspect Architecture</a>
+            </div>
+        </header>
+
+        <!-- Stats Strip Grid -->
+        <div class="stats-strip">
+            <div class="stat-card">
+                <span class="stat-label">Onion Relays Mapped</span>
+                <span class="stat-value" id="relay-counter">9,200</span>
+                <span class="stat-meta"><span class="green-dot" style="display:inline-block; width:5px; height:5px; margin-right:4px;"></span>SOCKS5 ROUTE ACTIVE</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Threat Enrichers Ingested</span>
+                <span class="stat-value">3 / 3</span>
+                <span class="stat-meta">SHODAN, VT, ABUSEIPDB</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">MITRE ATT&CK Coverage</span>
+                <span class="stat-value" id="mitre-counter">80.0%</span>
+                <span class="stat-meta">CAPABILITIES INTEGRATED</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Assessments Catalogued</span>
+                <span class="stat-value" id="incidents-counter">350</span>
+                <span class="stat-meta amber"><span class="status-dot running" style="display:inline-block; width:5px; height:5px; margin-right:4px;"></span>PIPELINE STANDBY</span>
+            </div>
+        </div>
+
+        <!-- Interactive DAG Visualizer Section -->
+        <section id="pipeline-interactive" class="pipeline-interactive-section">
+            
+            <!-- DAG Visualizer Card -->
+            <div class="dag-visualizer-card">
+                <div class="dag-visualizer-header">
+                    <h3>📁 Pipeline Flow Architecture</h3>
+                    <span style="font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-muted);">CLICK STAGES TO INSPECT JSON</span>
+                </div>
+                
+                <div class="dag-container">
+                    <svg viewBox="0 0 580 220" width="100%" height="100%" style="max-width: 580px;">
+                        <!-- Connection Lines -->
+                        <path id="flow1" class="flow-line-active" d="M 70,110 L 170,110" />
+                        <path id="flow2" class="flow-line-active" d="M 170,110 L 280,110" />
+                        <path id="flow3" class="flow-line-active" d="M 280,110 L 390,110" />
+                        <path id="flow4" class="flow-line-active" d="M 390,110 L 500,110" />
+                        
+                        <!-- Stage Nodes -->
+                        <!-- Node 1: Collection -->
+                        <g class="dag-node" onclick="selectDagNode(1)" id="node-1">
+                            <circle class="node-bg active" cx="70" cy="110" r="28" />
+                            <text class="node-icon" x="70" y="116" text-anchor="middle">📡</text>
+                            <text class="node-label active" x="70" y="165" text-anchor="middle">Collection</text>
+                            <text class="node-step active" x="70" y="65" text-anchor="middle">STAGE 01</text>
+                        </g>
+                        
+                        <!-- Node 2: Extraction -->
+                        <g class="dag-node" onclick="selectDagNode(2)" id="node-2">
+                            <circle class="node-bg" cx="170" cy="110" r="28" />
+                            <text class="node-icon" x="170" y="116" text-anchor="middle">⚙️</text>
+                            <text class="node-label" x="170" y="165" text-anchor="middle">Extraction</text>
+                            <text class="node-step" x="170" y="65" text-anchor="middle">STAGE 02</text>
+                        </g>
+                        
+                        <!-- Node 3: Enrichment -->
+                        <g class="dag-node" onclick="selectDagNode(3)" id="node-3">
+                            <circle class="node-bg" cx="280" cy="110" r="28" />
+                            <text class="node-icon" x="280" y="116" text-anchor="middle">🌍</text>
+                            <text class="node-label" x="280" y="165" text-anchor="middle">Enrichment</text>
+                            <text class="node-step" x="280" y="65" text-anchor="middle">STAGE 03</text>
+                        </g>
+                        
+                        <!-- Node 4: Analysis -->
+                        <g class="dag-node" onclick="selectDagNode(4)" id="node-4">
+                            <circle class="node-bg" cx="390" cy="110" r="28" />
+                            <text class="node-icon" x="390" y="116" text-anchor="middle">🧠</text>
+                            <text class="node-label" x="390" y="165" text-anchor="middle">Analysis</text>
+                            <text class="node-step" x="390" y="65" text-anchor="middle">STAGE 04</text>
+                        </g>
+                        
+                        <!-- Node 5: Scoring -->
+                        <g class="dag-node" onclick="selectDagNode(5)" id="node-5">
+                            <circle class="node-bg" cx="500" cy="110" r="28" />
+                            <text class="node-icon" x="500" y="116" text-anchor="middle">🎯</text>
+                            <text class="node-label" x="500" y="165" text-anchor="middle">Scoring</text>
+                            <text class="node-step" x="500" y="65" text-anchor="middle">STAGE 05</text>
+                        </g>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Terminal Info & SOCKS5 Live Activity Split Column -->
+            <div class="inspector-terminal-wrap">
+                <!-- Node Inspector -->
+                <div class="inspector-terminal-card">
+                    <div class="inspector-header">
+                        <span>STAGE METADATA INSPECTOR</span>
+                        <span style="color: var(--accent-green);">JSON READY</span>
+                    </div>
+                    <div class="inspector-body" id="inspector-data-box">
+                        <!-- Loaded dynamically by script -->
+                    </div>
+                </div>
+
+                <!-- SIEM Activity logs -->
+                <div class="inspector-terminal-card" style="height: 200px;">
+                    <div class="inspector-header">
+                        <span>SYSTEM ACTIVITY STREAM (SOCKS5 CONTROL)</span>
+                        <span>ISOLATED CIRCUITS: ACTIVE</span>
+                    </div>
+                    <div class="feed-body" id="circuit-log-box" style="height: 160px; padding: 0.75rem 1rem;">
+                        <div>[SYSTEM] Pipeline monitor initialized.</div>
+                        <div>[INFO] Loading local settings & configuration...</div>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Footer -->
+        <footer style="margin-top: 6rem; text-align: center; padding: 2.5rem 0; color: var(--text-muted); font-size: 0.8rem; border-top: 1px solid var(--border-color); font-family: var(--font-mono);">
+            <p>BlackSignal Threat Intelligence Pipeline • Restricted Access Gateway Console</p>
+        </footer>
+    </div>
+
+    <!-- Live Logs & Interactivity Drivers -->
+    <script>
+        // --- 1. SIMULATED SYSTEM ACTIVITY LOGS ---
+        const logBox = document.getElementById('circuit-log-box');
+        const logLines = [
+            "[INFO] Checking Tor control status on 127.0.0.1:9051...",
+            "[SUCCESS] Tor control authenticated cleanly.",
+            "[INFO] Tor manager: downloading network consensus status...",
+            "[INFO] Consensus loaded. 9771 active relays cataloged.",
+            "[INFO] SOCKS proxy wrapper: listening on socks5h://127.0.0.1:9050",
+            "[INFO] Establishing isolated SOCKS circuit for collectors...",
+            "[SUCCESS] Circuit 5af1-2b9c established over exit: 185.220.101.4",
+            "[INFO] stix_taxii_ingest: fetching feed URLHaus...",
+            "[INFO] market_scraper: scraping target Ahmia onions...",
+            "[SUCCESS] scrape_1718723901.json written (2.1 kB)",
+            "[INFO] Starting IOC extraction on raw artifacts...",
+            "[SUCCESS] Extracted 4 unique BTC wallets, 11 malware hashes.",
+            "[INFO] Launching Geo-IP and ASN enrichment handlers...",
+            "[SUCCESS] Shodan API: correlated ASN 24940 (Hetzner Online).",
+            "[INFO] Running behavioral sentiment NLP analysis...",
+            "[SUCCESS] MITRE mapping: matched T1486 (Data Encrypted for Impact)",
+            "[SUCCESS] Reputation analysis: correlated handle 'hacker_bob' across 2 forum posts.",
+            "[INFO] Calculating threat index weights...",
+            "[SUCCESS] Scored threat assessment completed. 1 Critical threat flagged.",
+            "[INFO] Standing by for operator instructions..."
+        ];
+
+        let logIndex = 0;
+        function addSimulatedLog() {
+            if (logIndex < logLines.length) {
+                const line = document.createElement('div');
+                line.innerText = logLines[logIndex];
+                
+                // Color formatting
+                if (logLines[logIndex].includes('SUCCESS')) {
+                    line.style.color = 'var(--accent-green)';
+                } else if (logLines[logIndex].includes('INFO')) {
+                    line.style.color = 'var(--text-muted)';
+                } else if (logLines[logIndex].includes('WARNING')) {
+                    line.style.color = 'var(--accent-amber)';
+                }
+                
+                logBox.appendChild(line);
+                logBox.scrollTop = logBox.scrollHeight;
+                logIndex++;
+                
+                // Adaptive delay
+                setTimeout(addSimulatedLog, Math.random() * 2000 + 500);
+            } else {
+                // Loop simulation log lines after some delay
+                setTimeout(() => {
+                    logBox.innerHTML = '<div>[SYSTEM] Pipeline monitor reset.</div>';
+                    logIndex = 0;
+                    addSimulatedLog();
+                }, 10000);
+            }
+        }
+
+        setTimeout(addSimulatedLog, 1000);
+
+        // --- 2. DYNAMIC PIPELINE STATUS CHECK ---
+        async function getPipelineStatus() {
+            const dot = document.getElementById('system-status-dot');
+            const text = document.getElementById('system-status-text');
+
+            try {
+                const res = await fetch('/api/status');
+                if (!res.ok) throw new Error();
+                const status = await res.json();
+
+                if (status.running) {
+                    dot.className = "status-dot running";
+                    text.innerText = `PIPELINE ACTIVE / STAGE: ${status.stage.toUpperCase()}`;
+                } else {
+                    dot.className = "status-dot";
+                    text.innerText = "SYSTEM CONNECTED — ONLINE STANDBY";
+                }
+            } catch (err) {
+                dot.style.backgroundColor = "var(--accent-red)";
+                dot.style.boxShadow = "none";
+                dot.className = "status-dot";
+                text.innerText = "CONSOLE UNREACHABLE (OFFLINE)";
+            }
+        }
+
+        getPipelineStatus();
+        setInterval(getPipelineStatus, 6000);
+
+        // --- 3. INTERACTIVE STAGE NODE SELECTION ---
+        const nodeData = {
+            1: {
+                title: "📡 STAGE 01: COLLECTION (SOCKS5 Proxy Scanner)",
+                desc: "Automated crawling of hidden services, public intelligence feeds, and onion markets. All traffic is multiplexed through isolated SOCKS5h Tor circuits to guarantee anonymity and avoid rate limits.",
+                drivers: "tor_control, socks5_wrapper, onion_crawler, stix_taxii_subscriber",
+                output: {
+                    "source": "ahmia_onion",
+                    "socks_proxy": "socks5h://127.0.0.1:9050",
+                    "circuit_ip": "185.220.101.4",
+                    "raw_text_size_kb": 10.4,
+                    "status": "COMPLETED"
+                }
+            },
+            2: {
+                title: "⚙️ STAGE 02: EXTRACTION (NLP & IOC NORMALIZER)",
+                desc: "Ingests raw gathered data, filters noise, and parses structure. Employs advanced regex matchers and a spaCy natural language processing (NLP) pipeline to locate hostnames, threat actor handles, wallets, and hashes.",
+                drivers: "regex_engine, spacy_ner_pipeline, entity_normalizer",
+                output: {
+                    "ipv4": ["194.26.135.8"],
+                    "sha256": ["9f83a011234b567c8d9e0f"],
+                    "btc_wallets": ["1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"],
+                    "actors": ["hacker_bob"]
+                }
+            },
+            3: {
+                title: "🌍 STAGE 03: ENRICHMENT (OSINT Correlator)",
+                desc: "Enriches localized IOCs against global databases. Retrieves ASN reputation scores, DNS resolution histories, Geo-IP locations, and VirusTotal / AbuseIPDB maliciousness thresholds to add deep contextual dimensions.",
+                drivers: "shodan_lookup, virustotal_api, abuseipdb_feed, maxmind_geoip",
+                output: {
+                    "asn": "AS24940 (Hetzner Online)",
+                    "geo_country": "DE",
+                    "vt_malicious_votes": 42,
+                    "abuseipdb_confidence": 98,
+                    "is_malicious": true
+                }
+            },
+            4: {
+                title: "🧠 STAGE 04: ANALYSIS (MITRE ATT&CK Mapping)",
+                desc: "Correlates semantic text cues and enriched vectors. Maps operational procedures against the MITRE ATT&CK Matrix, tracks actor group relationships, and computes historical reputation weight models.",
+                drivers: "mitre_mapper, actor_correlator, graph_dependency_analyzer",
+                output: {
+                    "mitre_mapping": ["T1486 (Data Encrypted for Impact)", "T1566 (Phishing)"],
+                    "target_sector": "FINANCIAL_SERVICES",
+                    "sentiment_score": -0.85
+                }
+            },
+            5: {
+                title: "🎯 STAGE 05: SCORING (Confidence Assessment)",
+                desc: "Processes enriched data through a composite priority scoring formula. Weighs sources, vendor verification indices, and contextual threat severity to classify incidents into tiered alerts.",
+                drivers: "scoring_engine, alert_dispatcher, report_builder",
+                output: {
+                    "computed_threat_score": 92,
+                    "severity_badge": "CRITICAL",
+                    "actionable_alert_dispatched": true,
+                    "pipeline_latency_ms": 142.5
+                }
+            }
+        };
+
+        function selectDagNode(id) {
+            // Clear active class from all node bgs, labels, steps
+            document.querySelectorAll('.node-bg').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.node-label').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.node-step').forEach(el => el.classList.remove('active'));
+            
+            // Add active class to selected node
+            const group = document.getElementById(`node-${id}`);
+            if (group) {
+                group.querySelector('.node-bg').classList.add('active');
+                group.querySelector('.node-label').classList.add('active');
+                group.querySelector('.node-step').classList.add('active');
+            }
+            
+            // Update inspector content based on node ID
+            updateInspector(id);
+        }
+
+        function updateInspector(id) {
+            const data = nodeData[id];
+            const inspector = document.getElementById('inspector-data-box');
+            
+            // Generate styled output
+            let html = `
+                <div class="inspector-stage-title">${data.title}</div>
+                <div class="inspector-stage-desc">${data.desc}</div>
+                
+                <div class="inspector-sub-title">Active Drivers & Modules</div>
+                <div style="color: var(--accent-green); margin-bottom: 0.8rem;">${data.drivers}</div>
+                
+                <div class="inspector-sub-title">Output Schema JSON</div>
+                <pre style="margin: 0; color: var(--text-main); font-family: var(--font-mono); font-size: 0.72rem;">{<br>`;
+            
+            const keys = Object.keys(data.output);
+            keys.forEach((key, index) => {
+                const val = data.output[key];
+                let valStr = '';
+                if (typeof val === 'string') {
+                    valStr = `<span class="json-val-str">"${val}"</span>`;
+                } else if (typeof val === 'number') {
+                    valStr = `<span class="json-val-num">${val}</span>`;
+                } else if (typeof val === 'boolean') {
+                    valStr = `<span class="json-val-bool">${val}</span>`;
+                } else if (Array.isArray(val)) {
+                    valStr = `[${val.map(v => `<span class="json-val-str">"${v}"</span>`).join(', ')}]`;
+                }
+                
+                html += `  <span class="json-key">"${key}"</span>: ${valStr}${index < keys.length - 1 ? ',' : ''}<br>`;
+            });
+            
+            html += `}</pre>`;
+            inspector.innerHTML = html;
+        }
+
+        // Initialize with Stage 1
+        selectDagNode(1);
+
+        // --- 4. COUNTER TICK MICRO-ANIMATIONS ---
+        function animateCounters() {
+            const counters = [
+                { id: 'relay-counter', target: 9842, current: 9200, step: 12, suffix: '' },
+                { id: 'mitre-counter', target: 94.1, current: 80.0, step: 0.4, suffix: '%' },
+                { id: 'incidents-counter', target: 432, current: 350, step: 2, suffix: '' }
+            ];
+            
+            counters.forEach(c => {
+                const el = document.getElementById(c.id);
+                if (!el) return;
+                const interval = setInterval(() => {
+                    c.current += c.step;
+                    if (c.current >= c.target) {
+                        c.current = c.target;
+                        clearInterval(interval);
+                    }
+                    if (Number.isInteger(c.target)) {
+                        el.innerText = Math.floor(c.current).toLocaleString() + c.suffix;
+                    } else {
+                        el.innerText = c.current.toFixed(1) + c.suffix;
+                    }
+                }, 15);
+            });
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(animateCounters, 800);
+        });
+    </script>
+</body>
+</html>

@@ -3,83 +3,355 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dark Web OSINT Platform v2</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>BlackSignal Console — Operational Threat Control</title>
+    <link rel="stylesheet" href="/static/css/style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 </head>
-<body class="bg-gray-900 text-gray-100 font-sans" x-data="appData()">
+<body class="console-grid" x-data="appData()">
 
-    <!-- Navbar -->
-    <nav class="border-b border-gray-800 bg-gray-900 p-4 sticky top-0 z-50">
-        <div class="container mx-auto flex justify-between items-center">
-            <h1 class="text-xl font-bold text-blue-500">🕵️ Dark Web OSINT <span class="text-xs text-gray-500">v2.0 Platform</span></h1>
-            <div class="flex items-center space-x-4">
-                <span class="text-sm" :class="status.running ? 'text-green-400 animate-pulse' : 'text-gray-400'" x-text="status.running ? 'RUNNING: ' + status.stage : 'IDLE'"></span>
-                <button @click="runPipeline" :disabled="status.running" 
-                        class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 px-4 py-2 rounded text-sm font-semibold transition">
-                    Run Pipeline
-                </button>
+    <!-- Sidebar Menu -->
+    <aside class="console-sidebar">
+        <div class="sidebar-title">
+            <span>🕵️</span> BlackSignal
+        </div>
+
+        <nav class="sidebar-menu">
+            <button @click="setView('logs')" :class="view === 'logs' ? 'active' : ''" class="sidebar-item">
+                <span>🖥️</span> Live Logs
+            </button>
+            <button @click="setView('raw')" :class="view === 'raw' ? 'active' : ''" class="sidebar-item">
+                <span>📥</span> Raw Scrapes
+            </button>
+            <button @click="setView('normalized')" :class="view === 'normalized' ? 'active' : ''" class="sidebar-item">
+                <span>⚙️</span> Normalized IOCs
+            </button>
+            <button @click="setView('enriched')" :class="view === 'enriched' ? 'active' : ''" class="sidebar-item">
+                <span>🌍</span> Enriched Intel
+            </button>
+            <button @click="setView('intelligence')" :class="view === 'intelligence' ? 'active' : ''" class="sidebar-item">
+                <span>🧠</span> Threat Assessments
+            </button>
+        </nav>
+
+        <div style="flex-grow: 1;"></div>
+
+        <!-- System Configuration Widget -->
+        <div class="sidebar-config-card" style="background: #111113; border: 1px solid var(--border-color); padding: 0.75rem; border-radius: 6px; margin-bottom: 1rem; font-size: 0.75rem;">
+            <div style="font-family: var(--font-display); font-weight: 600; color: var(--text-main); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; justify-content: space-between;">
+                <span>System Config</span>
+                <span class="status-dot" :class="status.running ? 'running' : ''" style="width: 6px; height: 6px;"></span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 0.35rem; font-family: var(--font-sans); color: var(--text-muted);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>Tor SOCKS Svc</span>
+                    <span style="font-weight: 500; font-family: var(--font-mono); color: var(--accent-green);">ONLINE</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>VirusTotal API</span>
+                    <span :style="apiKeys.virustotal ? 'color: var(--accent-green)' : 'color: var(--accent-red)'" style="font-weight: 500; font-family: var(--font-mono);" x-text="apiKeys.virustotal ? 'ACTIVE' : 'OFFLINE'"></span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>AbuseIPDB API</span>
+                    <span :style="apiKeys.abuseipdb ? 'color: var(--accent-green)' : 'color: var(--accent-red)'" style="font-weight: 500; font-family: var(--font-mono);" x-text="apiKeys.abuseipdb ? 'ACTIVE' : 'OFFLINE'"></span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>Shodan API</span>
+                    <span :style="apiKeys.shodan ? 'color: var(--accent-green)' : 'color: var(--accent-red)'" style="font-weight: 500; font-family: var(--font-mono);" x-text="apiKeys.shodan ? 'ACTIVE' : 'OFFLINE'"></span>
+                </div>
             </div>
         </div>
-    </nav>
 
-    <div class="container mx-auto p-6 grid grid-cols-12 gap-6">
-        
-        <!-- Sidebar Navigation -->
-        <div class="col-span-2 space-y-2">
-            <button @click="view = 'logs'" :class="view === 'logs' ? 'bg-gray-800 border-l-4 border-blue-500' : 'hover:bg-gray-800'" class="w-full text-left p-3 rounded transition">🖥️ Live Logs</button>
-            <div class="h-px bg-gray-800 my-2"></div>
-            <button @click="loadData('raw'); view = 'raw'" :class="view === 'raw' ? 'bg-gray-800 border-l-4 border-yellow-500' : 'hover:bg-gray-800'" class="w-full text-left p-3 rounded transition">📥 Raw Collection</button>
-            <button @click="loadData('normalized'); view = 'normalized'" :class="view === 'normalized' ? 'bg-gray-800 border-l-4 border-purple-500' : 'hover:bg-gray-800'" class="w-full text-left p-3 rounded transition">⚙️ Normalized Data</button>
-            <button @click="loadData('enriched'); view = 'enriched'" :class="view === 'enriched' ? 'bg-gray-800 border-l-4 border-green-500' : 'hover:bg-gray-800'" class="w-full text-left p-3 rounded transition">🌍 Enriched Intel</button>
-            <button @click="loadData('intelligence'); view = 'intelligence'" :class="view === 'intelligence' ? 'bg-gray-800 border-l-4 border-red-500' : 'hover:bg-gray-800'" class="w-full text-left p-3 rounded transition">🧠 Final Analysis</button>
-        </div>
+        <button @click="runPipeline" :disabled="status.running" class="btn btn-primary" style="width: 100%;">
+            <span x-show="!status.running">Start Pipeline</span>
+            <span x-show="status.running" style="display: inline-flex; align-items: center; gap: 0.5rem;">
+                <span class="status-dot running" style="width: 6px; height: 6px;"></span> Running...
+            </span>
+        </button>
+    </aside>
 
-        <!-- Main Content Area -->
-        <div class="col-span-10 bg-gray-800 rounded-lg shadow-xl min-h-[80vh] p-6 border border-gray-700">
+    <!-- Main Panel Frame -->
+    <main class="panel-main">
+        <!-- Header -->
+        <header class="panel-header">
+            <div class="status-tag">
+                <span class="status-dot" :class="status.running ? 'running' : ''"></span>
+                <span x-text="status.running ? 'PIPELINE RUNNING: ' + status.stage.toUpperCase() : 'PIPELINE STANDBY'"></span>
+            </div>
             
-            <!-- Logs View -->
-            <div x-show="view === 'logs'">
-                <h2 class="text-xl font-bold mb-4">Pipeline Logs</h2>
-                <div class="bg-black rounded p-4 h-[70vh] overflow-y-auto font-mono text-sm" id="log-container">
+            <div style="display: flex; gap: 1rem; align-items: center;">
+                <label style="font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.4rem; cursor: pointer; user-select: none;">
+                    <input type="checkbox" x-model="showRawJson" style="accent-color: var(--accent-green);"> Raw JSON
+                </label>
+                <a href="/" class="btn btn-secondary" style="padding: 0.4rem 0.85rem; font-size: 0.8rem;">← Home</a>
+            </div>
+        </header>
+
+        <!-- Body -->
+        <section class="panel-body">
+            
+            <!-- 1. LIVE EVENT TERMINAL -->
+            <div x-show="view === 'logs'" class="terminal-wrap">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem; align-items: center;">
+                    <h3 style="font-size: 1.15rem;">Live Pipeline Event Log</h3>
+                    <span style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono);">SOCKS PROXY VERIFIED</span>
+                </div>
+                <div class="terminal-box" id="log-container">
                     <template x-for="log in logs">
-                        <div class="py-0.5 border-b border-gray-900" :class="log.includes('❌') ? 'text-red-400' : (log.includes('✅') ? 'text-green-400' : 'text-gray-300')" x-text="log"></div>
+                        <div class="terminal-line" :class="getLogClass(log)" x-text="log"></div>
                     </template>
+                    <div class="terminal-line" x-show="status.running" style="color: var(--accent-green);">
+                        Fetching consensus relay descriptors... <span class="terminal-cursor"></span>
+                    </div>
+                    <div class="terminal-line" x-show="!status.running && logs.length === 0" style="color: var(--text-muted);">
+                        Pipeline console ready. Press "Start Pipeline" to launch OSINT data gathering.
+                    </div>
                 </div>
             </div>
 
-            <!-- Data Views -->
-            <div x-show="view !== 'logs'">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-bold capitalize" x-text="view + ' Data'"></h2>
-                    <button @click="loadData(view)" class="text-sm text-blue-400 hover:text-white">Refresh</button>
+            <!-- 2. HIGH DENSITY SPLIT PANEL VIEWS (JSON TOGGLE ACTIVE) -->
+            <div x-show="view !== 'logs' && showRawJson" class="terminal-wrap">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem; align-items: center;">
+                    <h3 style="font-size: 1.15rem; text-transform: capitalize;" x-text="view + ' Data Schema'"></h3>
+                    <button @click="loadData(view)" class="btn btn-secondary" style="padding: 0.4rem 0.85rem; font-size: 0.8rem;">Refresh</button>
                 </div>
-                
-                <div class="space-y-4 h-[70vh] overflow-y-auto">
+                <div class="terminal-box" style="font-size: 0.75rem;">
                     <template x-for="item in currentData">
-                        <div class="bg-gray-900 p-4 rounded border border-gray-700">
-                            <div class="flex justify-between text-xs text-gray-500 mb-2">
-                                <span x-text="item.filename"></span>
-                                <span x-text="item.content.meta?.timestamp"></span>
-                            </div>
-                            <pre class="text-xs text-green-300 overflow-x-auto" x-text="JSON.stringify(item.content.data, null, 2)"></pre>
+                        <div style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1.5rem;">
+                            <div style="color: var(--accent-green); font-family: var(--font-mono); margin-bottom: 0.5rem;" x-text="item.filename"></div>
+                            <pre class="terminal-line" style="color: #a7f3d0;" x-text="JSON.stringify(item.content, null, 2)"></pre>
                         </div>
                     </template>
-                    <div x-show="currentData.length === 0" class="text-center text-gray-500 mt-20">No data found for this category. Run the pipeline first.</div>
+                    <div x-show="currentData.length === 0" style="color: var(--text-muted);">No active JSON payloads found. Run the pipeline to collect artifacts.</div>
                 </div>
             </div>
 
-        </div>
-    </div>
+            <!-- 3. SPLIT PANEL DYNAMIC CARD EXPLORER (DEFAULT VIEW) -->
+            <div x-show="view !== 'logs' && !showRawJson" class="split-pane">
+                
+                <!-- Left Pane: High-Density Table List -->
+                <div class="split-list-view">
+                    <div class="split-list-header">
+                        <span style="text-transform: uppercase;" x-text="view + ' Feed'"></span>
+                        <span class="badge" style="background-color: #18181b; border: 1px solid var(--border-color);" x-text="getListCount() + ' items'"></span>
+                    </div>
+                    <div class="split-list-body">
+                        <!-- Table for Scored Intelligence -->
+                        <table class="console-table" x-show="view === 'intelligence'">
+                            <thead>
+                                <tr>
+                                    <th>Target ID</th>
+                                    <th>Type</th>
+                                    <th>Severity</th>
+                                    <th>Score</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="threat in flatData">
+                                    <tr @click="selectedThreat = threat" :class="selectedThreat?.entity_id === threat.entity_id ? 'selected' : ''">
+                                        <td>
+                                            <span class="threat-row-indicator" :class="threat.severity.toLowerCase()"></span>
+                                            <span x-text="threat.entity_id.length > 20 ? threat.entity_id.substring(0, 20) + '...' : threat.entity_id"></span>
+                                        </td>
+                                        <td x-text="threat.entity_type"></td>
+                                        <td>
+                                            <span class="badge" :class="threat.severity.toLowerCase()" x-text="threat.severity"></span>
+                                        </td>
+                                        <td style="font-family: var(--font-mono); font-weight: 700; color: white;" x-text="threat.threat_score"></td>
+                                    </tr>
+                                </template>
+                                <tr x-show="getListCount() === 0">
+                                    <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 3rem 0;">No scored intelligence compiled yet.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <!-- Table for Raw Scrapes / Normalized / Enriched IOCs -->
+                        <table class="console-table" x-show="view !== 'intelligence'">
+                            <thead>
+                                <tr>
+                                    <th>Indicator</th>
+                                    <th>Type</th>
+                                    <th>Source File</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="ioc in flatData">
+                                    <tr @click="selectedIOC = ioc" :class="selectedIOC?.id === ioc.id ? 'selected' : ''">
+                                        <td style="font-family: var(--font-mono);">
+                                            <span class="threat-row-indicator low"></span>
+                                            <span x-text="ioc.id.length > 22 ? ioc.id.substring(0, 22) + '...' : ioc.id"></span>
+                                        </td>
+                                        <td x-text="ioc.type || ioc.subtype"></td>
+                                        <td style="font-size: 0.8rem; color: var(--text-muted);" x-text="ioc.source_file"></td>
+                                    </tr>
+                                </template>
+                                <tr x-show="getListCount() === 0">
+                                    <td colspan="3" style="text-align: center; color: var(--text-muted); padding: 3rem 0;">No intelligence indicators loaded.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Right Pane: Interactive Detail Inspector -->
+                <div class="split-detail-view">
+                    
+                    <!-- A. Intelligence Inspector Details -->
+                    <template x-if="view === 'intelligence'">
+                        <div>
+                            <template x-if="selectedThreat">
+                                <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                                    <div>
+                                        <div style="font-size: 0.8rem; color: var(--text-muted); font-family: var(--font-mono); margin-bottom: 0.25rem;">TARGET IDENTIFIER</div>
+                                        <h3 style="font-size: 1.35rem; color: white; word-break: break-all; font-family: var(--font-mono);" x-text="selectedThreat.entity_id"></h3>
+                                    </div>
+
+                                    <div class="detail-section-title">Assessment Summary</div>
+
+                                    <div class="metadata-grid">
+                                        <span class="metadata-label">Entity Type</span>
+                                        <span class="metadata-value" x-text="selectedThreat.entity_type"></span>
+
+                                        <span class="metadata-label">Severity Level</span>
+                                        <span>
+                                            <span class="badge" :class="selectedThreat.severity.toLowerCase()" x-text="selectedThreat.severity"></span>
+                                        </span>
+
+                                        <span class="metadata-label">Threat Index</span>
+                                        <span class="metadata-value" style="color: var(--accent-amber); font-weight: 700;" x-text="selectedThreat.threat_score + ' / 100'"></span>
+
+                                        <span class="metadata-label">Confidence</span>
+                                        <span class="metadata-value" x-text="(selectedThreat.overall_confidence * 100) + '%'"></span>
+                                    </div>
+
+                                    <div class="detail-section-title">Correlated Evidence</div>
+
+                                    <div class="detail-evidence-list">
+                                        <template x-for="reason in selectedThreat.reasons">
+                                            <div class="detail-evidence-card">
+                                                <div class="dec-header">
+                                                    <span class="dec-type" x-text="reason.category"></span>
+                                                    <span class="dec-points" x-text="'+' + reason.points_contributed + ' pts'"></span>
+                                                </div>
+                                                <div class="dec-desc">
+                                                    Signal Flag: <strong x-text="reason.signal"></strong>
+                                                    <span x-show="reason.description" x-text="' — ' + reason.description" style="color: var(--text-muted)"></span>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+                            <template x-if="!selectedThreat">
+                                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text-muted); text-align: center; padding: 6rem 0;">
+                                    <span style="font-size: 2rem; margin-bottom: 1rem;">🔍</span>
+                                    <p>Select a threat record from the list to load inspector details.</p>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+
+                    <!-- B. IOC Inspector Details -->
+                    <template x-if="view !== 'intelligence'">
+                        <div>
+                            <template x-if="selectedIOC">
+                                <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                                    <div>
+                                        <div style="font-size: 0.8rem; color: var(--text-muted); font-family: var(--font-mono); margin-bottom: 0.25rem;">INDICATOR VALUE</div>
+                                        <h3 style="font-size: 1.25rem; color: white; word-break: break-all; font-family: var(--font-mono);" x-text="selectedIOC.id"></h3>
+                                        <button @click="copyToClipboard(selectedIOC.id)" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem; margin-top: 0.5rem;">Copy to Clipboard</button>
+                                    </div>
+
+                                    <div class="detail-section-title">Indicator Metadata</div>
+
+                                    <div class="metadata-grid">
+                                        <span class="metadata-label">Category</span>
+                                        <span class="metadata-value" x-text="selectedIOC.type || selectedIOC.subtype"></span>
+
+                                        <span class="metadata-label">File Context</span>
+                                        <span class="metadata-value" x-text="selectedIOC.source_file || selectedIOC.filename"></span>
+
+                                        <span class="metadata-label">Discovered</span>
+                                        <span class="metadata-value" x-text="selectedIOC.discovered_at ? new Date(selectedIOC.discovered_at * 1000).toLocaleString() : 'N/A'"></span>
+                                    </div>
+
+                                    <!-- Enriched API evidence details -->
+                                    <div class="detail-section-title">Enrichment Findings</div>
+                                    <template x-if="selectedIOC.evidence && Object.keys(selectedIOC.evidence).length > 0">
+                                        <div class="detail-evidence-list">
+                                            <template x-for="[category, signals] in Object.entries(selectedIOC.evidence)">
+                                                <div>
+                                                    <div class="evidence-header" style="margin-bottom: 0.5rem; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;" x-text="category"></div>
+                                                    <template x-for="signal in signals">
+                                                        <div class="detail-evidence-card" style="margin-bottom: 0.5rem;">
+                                                            <div class="dec-header">
+                                                                <span class="dec-type" style="color: var(--accent-amber);" x-text="signal.type"></span>
+                                                                <span class="dec-points" style="color: var(--text-muted);" x-text="'Confidence: ' + (signal.confidence * 100) + '%'"></span>
+                                                            </div>
+                                                            <div class="dec-desc" x-text="signal.description"></div>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </template>
+                                    <template x-if="!selectedIOC.evidence || Object.keys(selectedIOC.evidence).length === 0">
+                                        <div style="font-size: 0.8rem; color: var(--text-muted); font-style: italic;">
+                                            No external API enrichment reports compiled for this indicator.
+                                        </div>
+                                    </template>
+
+                                    <!-- Warning box if any API key is missing -->
+                                    <div x-show="!apiKeys.virustotal || !apiKeys.abuseipdb || !apiKeys.shodan" style="margin-top: 0.5rem; padding: 0.85rem; border: 1px dashed rgba(245, 158, 11, 0.25); border-radius: 6px; background: rgba(245, 158, 11, 0.02);">
+                                        <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: var(--accent-amber); font-weight: 600; margin-bottom: 0.5rem;">
+                                            <span>⚠️</span> Passive Intel Limits Active
+                                        </div>
+                                        <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0 0 0.5rem 0; line-height: 1.4;">
+                                            External lookup keys are missing. Active threat enrichment is bypassed:
+                                        </p>
+                                        <ul style="margin: 0; padding-left: 1.2rem; font-size: 0.75rem; color: var(--text-muted); line-height: 1.5; display: flex; flex-direction: column; gap: 0.25rem;">
+                                            <template x-if="!apiKeys.virustotal">
+                                                <li><strong>VirusTotal API:</strong> Disabled (file hash detections bypassed)</li>
+                                            </template>
+                                            <template x-if="!apiKeys.abuseipdb">
+                                                <li><strong>AbuseIPDB API:</strong> Disabled (IP telemetry check bypassed)</li>
+                                            </template>
+                                            <template x-if="!apiKeys.shodan">
+                                                <li><strong>Shodan API:</strong> Disabled (port vulnerability scan bypassed)</li>
+                                            </template>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </template>
+                            <template x-if="!selectedIOC">
+                                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text-muted); text-align: center; padding: 6rem 0;">
+                                    <span style="font-size: 2rem; margin-bottom: 1rem;">🔬</span>
+                                    <p>Select an indicator from the feed list to inspect metadata details.</p>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+
+                </div>
+
+            </div>
+
+        </section>
+    </main>
 
     <script>
         function appData() {
             return {
                 view: 'logs',
+                showRawJson: false,
                 status: { running: false, stage: 'Idle' },
+                apiKeys: { virustotal: false, abuseipdb: false, shodan: false },
                 logs: [],
                 currentData: [],
+                flatData: [],
+                selectedThreat: null,
+                selectedIOC: null,
                 socket: null,
 
                 init() {
@@ -92,9 +364,31 @@
                         if(msg.status === 'completed') {
                             this.status.running = false;
                             this.status.stage = 'Completed';
-                            this.loadData('intelligence'); // Auto load results on finish
+                            this.setView('intelligence'); // Jump to Intelligence view on completion
                         }
                     });
+                    this.updateStatus();
+                },
+
+                setView(viewName) {
+                    this.view = viewName;
+                    this.selectedThreat = null;
+                    this.selectedIOC = null;
+                    this.loadData(viewName);
+                },
+
+                async updateStatus() {
+                    try {
+                        const res = await fetch('/api/status');
+                        const status = await res.json();
+                        this.status = status;
+                        if (status.api_keys) {
+                            this.apiKeys = status.api_keys;
+                        }
+                        if (status.running && this.logs.length === 0) {
+                            this.logs = status.logs || [];
+                        }
+                    } catch (e) {}
                 },
 
                 runPipeline() {
@@ -106,14 +400,35 @@
                 },
 
                 async loadData(category) {
+                    if (category === 'logs') return;
                     const res = await fetch(`/api/data/${category}`);
                     const json = await res.json();
-                    this.currentData = json.data;
+                    this.currentData = json.data || [];
+                    this.flatData = json.flat_data || [];
+                },
+
+                getListCount() {
+                    return this.flatData.length;
+                },
+
+                getLogClass(log) {
+                    if (log.includes('❌') || log.includes('Failed')) return 'error';
+                    if (log.includes('✅') || log.includes('Finished')) return 'success';
+                    if (log.includes('🚀') || log.includes('Starting')) return 'info';
+                    if (log.includes('⚠️')) return 'warn';
+                    if (log.includes('🛑') || log.includes('CRITICAL')) return 'critical';
+                    return '';
                 },
 
                 scrollToBottom() {
-                    const el = document.getElementById('log-container');
-                    if(el) el.scrollTop = el.scrollHeight;
+                    this.$nextTick(() => {
+                        const el = document.getElementById('log-container');
+                        if(el) el.scrollTop = el.scrollHeight;
+                    });
+                },
+
+                copyToClipboard(text) {
+                    navigator.clipboard.writeText(text);
                 }
             }
         }

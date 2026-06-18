@@ -13,7 +13,6 @@ except ImportError:
     import config
 
 logger = logging.getLogger("NERExtractor")
-logging.basicConfig(level=logging.INFO)
 
 class NERExtractor:
     def __init__(self):
@@ -21,50 +20,66 @@ class NERExtractor:
         try:
             self.nlp = spacy.load("en_core_web_sm")
         except OSError:
-            logger.error("❌ Model not found. Run: python -m spacy download en_core_web_sm")
-            sys.exit(1)
+            raise RuntimeError(
+                "spaCy model 'en_core_web_sm' not found. "
+                "Run: python -m spacy download en_core_web_sm"
+            )
 
     def run(self):
         raw_path = os.path.join(config.BASE_DIR, "data", "raw", "*.json")
+        from core.state_tracker import StateTracker
+        tracker = StateTracker(config.STATE_DB_PATH)
+
         for file_path in glob.glob(raw_path):
+            if "tor_relays" in os.path.basename(file_path):
+                continue
+            if tracker.is_processed("ner_extractor", file_path):
+                continue
             self._process_file(file_path)
 
     def _process_file(self, file_path):
-        with open(file_path, 'r') as f:
-            data = json.load(f)
+        try:
+            with open(file_path, 'r') as f:
+                data = json.load(f)
 
-        # NER works best on actual sentences, not JSON structures.
-        # We try to extract "raw_text" fields if they exist (common in our scrapers)
-        text_chunks = []
-        raw_data = data.get("data", [])
-        
-        if isinstance(raw_data, list):
-            for item in raw_data:
-                if isinstance(item, dict) and "raw_text" in item:
-                    text_chunks.append(item["raw_text"])
-                elif isinstance(item, str):
-                    text_chunks.append(item)
-        
-        extracted_entities = []
-        
-        for text in text_chunks:
-            # Limit text length to prevent memory overflows on large blobs
-            doc = self.nlp(text[:50000])
+            # NER works best on actual sentences, not JSON structures.
+            # We try to extract "raw_text" fields if they exist (common in our scrapers)
+            text_chunks = []
+            raw_data = data.get("data", [])
             
-            for ent in doc.ents:
-                if ent.label_ in ["PERSON", "ORG", "GPE"]:
-                    extracted_entities.append({
-                        "id": ent.text,
-                        "type": "entity",
-                        "subtype": ent.label_, # PERSON, ORG, etc.
-                        "source": os.path.basename(file_path)
-                    })
+            if isinstance(raw_data, list):
+                for item in raw_data:
+                    if isinstance(item, dict) and "raw_text" in item:
+                        text_chunks.append(item["raw_text"])
+                    elif isinstance(item, str):
+                        text_chunks.append(item)
+            
+            extracted_entities = []
+            
+            for text in text_chunks:
+                # Limit text length to prevent memory overflows on large blobs
+                doc = self.nlp(text[:50000])
+                
+                for ent in doc.ents:
+                    if ent.label_ in ["PERSON", "ORG", "GPE"]:
+                        extracted_entities.append({
+                            "id": ent.text,
+                            "type": "entity",
+                            "subtype": ent.label_, # PERSON, ORG, etc.
+                            "source": os.path.basename(file_path)
+                        })
 
-        # Deduplicate by ID
-        unique_entities = {v['id']: v for v in extracted_entities}.values()
+            # Deduplicate by ID
+            unique_entities = {v['id']: v for v in extracted_entities}.values()
 
-        if unique_entities:
-            self._save(list(unique_entities), os.path.basename(file_path))
+            if unique_entities:
+                self._save(list(unique_entities), os.path.basename(file_path))
+
+            # Mark processed in SQLite DB to prevent redundant execution
+            from core.state_tracker import StateTracker
+            StateTracker(config.STATE_DB_PATH).mark_processed("ner_extractor", file_path)
+        except Exception as e:
+            logger.error(f"❌ Failed to process NER in {file_path}: {e}")
 
     def _save(self, entities, source):
         output = {

@@ -1,18 +1,15 @@
 import os
 import time
 import requests
-from dotenv import load_dotenv
 from .utils import BaseEnricher
 
-load_dotenv(".secrets.env")
+from config import settings as config
 
 class APIEnricher(BaseEnricher):
     def __init__(self):
         super().__init__("API_Enricher")
-        self.vt_key = os.getenv("VIRUSTOTAL_API_KEY")
-        self.abuse_key = os.getenv("ABUSEIPDB_API_KEY")
-        self.session = requests.Session()
-        self.session.headers.update({"User-Agent": "DarkWeb-OSINT-Pipeline/2.0"})
+        self.vt_key = config.VIRUSTOTAL_API_KEY
+        self.abuse_key = config.ABUSEIPDB_API_KEY
 
     def run(self):
         files = self.get_normalized_files()
@@ -38,6 +35,9 @@ class APIEnricher(BaseEnricher):
 
             if enriched_items:
                 self.save_enriched(enriched_items, file_path)
+            else:
+                from core.state_tracker import StateTracker
+                StateTracker(config.STATE_DB_PATH).mark_processed(self.name, file_path)
 
     def _check_virustotal(self, hash_val):
         """Queries VirusTotal v3 API"""

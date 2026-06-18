@@ -12,7 +12,6 @@ except ImportError:
     import config
 
 logger = logging.getLogger("AffiliateAnalysis")
-logging.basicConfig(level=logging.INFO)
 
 class AffiliateAnalysis:
     RECRUITMENT_TERMS = ["partner", "affiliate", "percentage", "share", "profit", "recruit"]
@@ -20,7 +19,13 @@ class AffiliateAnalysis:
     def run(self):
         files = glob.glob(os.path.join(config.BASE_DIR, "data", "raw", "scrape_*.json"))
         
+        from core.state_tracker import StateTracker
+        tracker = StateTracker(config.STATE_DB_PATH)
+
         for file_path in files:
+            if tracker.is_processed("affiliate_analysis", file_path):
+                continue
+
             with open(file_path, 'r') as f:
                 content = json.load(f)
             
@@ -44,10 +49,21 @@ class AffiliateAnalysis:
             if analyzed_items:
                 self._save(analyzed_items, os.path.basename(file_path))
 
+            # Mark processed in StateTracker
+            tracker.mark_processed("affiliate_analysis", file_path)
+
     def _save(self, data, source):
         path = os.path.join(config.BASE_DIR, "data", "intelligence", f"intel_affiliate_{int(time.time())}_{source}")
+        output = {
+            "meta": {
+                "feature": "affiliate_analysis",
+                "source": source,
+                "timestamp": int(time.time())
+            },
+            "data": data
+        }
         with open(path, 'w') as f:
-            json.dump({"data": data}, f, indent=4)
+            json.dump(output, f, indent=4)
         logger.info(f"✅ Found {len(data)} affiliate indicators -> {path}")
 
 if __name__ == "__main__":

@@ -1,5 +1,4 @@
 import time
-import socket
 import hashlib
 import logging
 import requests
@@ -9,7 +8,6 @@ from stem import SocketError, Signal
 from stem.connection import AuthenticationFailure
 
 logger = logging.getLogger("TorManager")
-logging.basicConfig(level=logging.INFO)
 
 class TorManager:
     def __init__(self, control_port, socks_proxy_host, socks_proxy_port, control_password):
@@ -74,3 +72,12 @@ class TorManager:
             except Exception:
                 pass
             self._controller = None
+
+    # Context manager support for clean resource management
+    def __enter__(self):
+        self.connect()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.disconnect()
+        return False
