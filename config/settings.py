@@ -12,8 +12,11 @@ DATA_DIR = BASE_DIR / "data"
 LOG_DIR = BASE_DIR / "logs" 
 STATE_DB_PATH = DATA_DIR / "pipeline_state.db"
 
-# Operational fallback flag for development/testing environments without Tor
-ALLOW_CLEARNET_FALLBACK = os.getenv("ALLOW_CLEARNET_FALLBACK", "True").lower() in ("true", "1", "yes")
+# Operational fallback flag for development/testing environments without Tor.
+# Defaults OFF: this pipeline is meant to route dark-web traffic through Tor,
+# and silently falling back to clearnet on a Tor hiccup would leak the host's
+# real IP to hostile marketplace infrastructure. Opt in explicitly if needed.
+ALLOW_CLEARNET_FALLBACK = os.getenv("ALLOW_CLEARNET_FALLBACK", "False").lower() in ("true", "1", "yes")
 
 # Alias for Backward Compatibility
 OUTPUT_DIR = DATA_DIR

@@ -125,7 +125,7 @@ BlackSignal is a **DAG-based, unidirectional pipeline** — not a collection of 
 
 - **DAG execution** — Stages run in parallel; dependencies are explicit, not inferred from file names
 - **Fail-fast for critical stages** — If collection or scoring fails, the pipeline halts. Non-critical failures are skipped gracefully
-- **Tor-first networking** — All dark web access routes through `TorManager` with per-purpose circuit isolation. Clearnet fallback is configurable via `ALLOW_CLEARNET_FALLBACK` (enabled by default for development; disable for production)
+- **Tor-first networking** — All dark web access routes through `TorManager` with per-purpose circuit isolation. Clearnet fallback is configurable via `ALLOW_CLEARNET_FALLBACK` (disabled by default — opt in explicitly if you want it)
 - **Data flows forward only** — Raw → Normalized → Enriched → Intelligence → Scored. No stage mutates upstream data
 - **Evidence-based scoring** — Every threat score is decomposable: you can trace exactly _why_ an entity scored 87/100
 - **Incremental run caching** — Evaluates file hashes and pipeline stages using SQLite to avoid redundant work and speed up subsequent executions
@@ -240,7 +240,7 @@ cp .env.example .env
 | Variable | Required | Purpose |
 |----------|----------|---------|
 | `TOR_PASSWORD` | ✅ | Tor control port authentication |
-| `ALLOW_CLEARNET_FALLBACK` | ❌ | Set to `True` (default) to allow direct connections when Tor is unavailable. Set to `False` for production to enforce Tor-only networking |
+| `ALLOW_CLEARNET_FALLBACK` | ❌ | Defaults to `False` — enforces Tor-only networking, halting rather than leaking your real IP if Tor is unavailable. Set to `True` only if you explicitly want direct-connection fallback |
 | `VIRUSTOTAL_API_KEY` | ❌ | Hash reputation lookups |
 | `ABUSEIPDB_API_KEY` | ❌ | IP abuse scoring |
 | `SHODAN_API_KEY` | ❌ | Infrastructure reconnaissance |
@@ -322,7 +322,10 @@ Threat Score = Σ (signal_confidence × category_weight × 10)
 
 - ✅ All dark web traffic routed through Tor with per-purpose circuit isolation
 - ✅ Circuit renewal (`NEWNYM`) supported for long-running operations
-- ✅ Configurable Tor enforcement — `ALLOW_CLEARNET_FALLBACK=False` enforces Tor-only networking (recommended for production)
+- ✅ Tor-only networking enforced by default — `ALLOW_CLEARNET_FALLBACK=False` unless explicitly opted into
+- ✅ Docker containers run as a non-root user, not root — this pipeline parses attacker-controlled content from dark web sources, so the container's blast radius is deliberately minimized
+- ✅ Pipeline output (`data/`, `logs/`) is written to isolated Docker volumes, not bind-mounted to the host filesystem — scraped content never lands directly on the host disk
+- ✅ Tor's SOCKS/control ports are container-internal only, not published to the host
 - ✅ Dashboard supports optional HTTP Basic Auth  
 - ✅ Path traversal protection on data API endpoints
 - ✅ Secrets loaded from `.env` (gitignored)

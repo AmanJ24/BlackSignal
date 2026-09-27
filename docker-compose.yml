@@ -4,9 +4,13 @@ services:
       context: .
       dockerfile: Dockerfile.tor
     container_name: blacksignal-tor
-    ports:
-      - "9050:9050"
-      - "9051:9051"
+    # SOCKS/control ports are intentionally NOT published to the host.
+    # The app/pipeline containers reach Tor over the internal Docker network
+    # (TOR_SOCKS_HOST=tor) — publishing 9050/9051 isn't needed for that and
+    # only adds exposure. Uncomment for local host-side debugging only.
+    # ports:
+    #   - "127.0.0.1:9050:9050"
+    #   - "127.0.0.1:9051:9051"
     healthcheck:
       test: ["CMD-SHELL", "echo 'GETINFO status/circuit-established' | nc -w 2 127.0.0.1 9051 || exit 1"]
       interval: 15s
@@ -25,20 +29,24 @@ services:
       - TOR_SOCKS_PORT=9050
       - TOR_CONTROL_PORT=9051
       - TOR_PASSWORD=${TOR_PASSWORD:-TorRelay123}
-      - ALLOW_CLEARNET_FALLBACK=${ALLOW_CLEARNET_FALLBACK:-True}
+      - ALLOW_CLEARNET_FALLBACK=${ALLOW_CLEARNET_FALLBACK:-False}
       - VIRUSTOTAL_API_KEY=${VIRUSTOTAL_API_KEY}
       - ABUSEIPDB_API_KEY=${ABUSEIPDB_API_KEY}
       - SHODAN_API_KEY=${SHODAN_API_KEY}
       - FLASK_ENV=${FLASK_ENV:-development}
-      - FLASK_SECRET_KEY=${FLASK_SECRET_KEY:-blacksignal-secret}
+      # Bare "VAR" (no "=") passes it through only if actually set in .env/shell,
+      # and omits it entirely otherwise — unlike "VAR=${VAR}", which would set an
+      # empty string that app.py's os.getenv() would treat as a real (blank) key
+      # instead of falling back to its own secrets.token_hex(32) random default.
+      - FLASK_SECRET_KEY
       - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:8080}
       - DASHBOARD_USER=${DASHBOARD_USER}
       - DASHBOARD_PASSWORD=${DASHBOARD_PASSWORD}
     ports:
       - "8080:8080"
     volumes:
-      - ./data:/app/data
-      - ./logs:/app/logs
+      - blacksignal_data:/app/data
+      - blacksignal_logs:/app/logs
     restart: on-failure
     command: python web/app.py
 
@@ -53,13 +61,17 @@ services:
       - TOR_SOCKS_PORT=9050
       - TOR_CONTROL_PORT=9051
       - TOR_PASSWORD=${TOR_PASSWORD:-TorRelay123}
-      - ALLOW_CLEARNET_FALLBACK=${ALLOW_CLEARNET_FALLBACK:-True}
+      - ALLOW_CLEARNET_FALLBACK=${ALLOW_CLEARNET_FALLBACK:-False}
       - VIRUSTOTAL_API_KEY=${VIRUSTOTAL_API_KEY}
       - ABUSEIPDB_API_KEY=${ABUSEIPDB_API_KEY}
       - SHODAN_API_KEY=${SHODAN_API_KEY}
     volumes:
-      - ./data:/app/data
-      - ./logs:/app/logs
+      - blacksignal_data:/app/data
+      - blacksignal_logs:/app/logs
     # Starts the pipeline once; run manually or set up a cron
     command: python orchestration/run_pipeline.py
     profiles: ["pipeline-run"]
+
+volumes:
+  blacksignal_data:
+  blacksignal_logs:
