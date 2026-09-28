@@ -8,6 +8,14 @@
 
 ---
 
+## Demo
+
+![BlackSignal dashboard walkthrough](docs/images/demo_walkthrough.gif)
+
+This walkthrough runs the real pipeline — extraction, MITRE mapping, live VirusTotal / AbuseIPDB / Shodan enrichment, and scoring — against a locally generated dataset rather than a live scrape. Capturing genuine, uncontrolled dark-web marketplace content on camera isn't something this project's own "educational and research purposes only" scope permits.
+
+---
+
 ## Why BlackSignal Exists
 
 Dark web marketplaces sell stolen credentials, leaked databases, ransomware kits, and zero-day exploits **every day**. Most organizations only learn about this _after_ the breach.
@@ -190,6 +198,9 @@ BlackSignal/
 │   ├── enriched/               # Stage 3 output
 │   └── intelligence/           # Stage 4+5 output (includes scored results)
 │
+├── docs/
+│   └── images/                 # README assets (demo walkthrough, etc.)
+│
 ├── tests/                      # pytest test suite (32 tests)
 │   ├── test_scoring_engine.py  # ScoringEngine unit tests
 │   ├── test_extractors.py      # IOC + Hash pattern tests
@@ -310,7 +321,7 @@ Threat Score = Σ (signal_confidence × category_weight × 10)
 | `ioc` | 1.0× | IP found in threat feed |
 | `infrastructure` | 1.5× | Hosted on bulletproof ASN |
 | `behavioral` | 2.0× | Negative sentiment + ransomware keywords |
-| `mitre` | 2.5× | Matches T1486 (Data Encrypted for Impact) |
+| `mitre` | 2.5× | Matches a mapped ATT&CK technique (e.g. T1486 Data Encrypted for Impact, T1583 Acquire Infrastructure, T1589 Gather Victim Identity Information) |
 | `affiliate` | 3.0× | RaaS recruitment language detected |
 
 - Score is **capped at 100** and bucketed into severity levels: LOW (<40), MEDIUM (40-59), HIGH (60-79), CRITICAL (80+)

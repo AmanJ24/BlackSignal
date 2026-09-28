@@ -16,9 +16,13 @@ logger = logging.getLogger("MITREMapper")
 class MITREMapper:
     # Simplified mapping for demonstration. Real implementation needs a larger DB.
     TTPS = {
-        "T1587": ["develop", "exploit", "malware", "tool"], # Develop Capabilities
-        "T1566": ["phishing", "email", "lure"],             # Phishing
-        "T1486": ["encrypt", "ransom", "lock"]              # Data Encrypted for Impact
+        "T1587": ["develop", "exploit", "malware", "tool", "crypter", "fud"],  # Develop Capabilities
+        "T1566": ["phishing", "email", "lure"],                                # Phishing
+        "T1486": ["encrypt", "ransom", "lock"],                                # Data Encrypted for Impact
+        "T1589": ["database", "dump", "records", "identity", "pii", "ssn"],    # Gather Victim Identity Information
+        "T1583": ["hosting", "infrastructure", "bulletproof", "server"],       # Acquire Infrastructure
+        "T1590": ["access", "rdp", "vpn", "network access"],                   # Gather Victim Network Information
+        "T1498": ["ddos", "booter", "stresser", "flood"]                       # Network Denial of Service
     }
 
     def run(self):

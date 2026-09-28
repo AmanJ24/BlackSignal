@@ -1,6 +1,7 @@
 import time
 import hashlib
 import logging
+import socket
 import requests
 import socks
 from stem.control import Controller
@@ -20,7 +21,11 @@ class TorManager:
 
     def connect(self):
         try:
-            self._controller = Controller.from_port(port=self.control_port)
+            # stem validates `address` as a literal IP, not a hostname — resolve
+            # first so this works with a Docker service name like "tor", not
+            # just "127.0.0.1".
+            control_address = socket.gethostbyname(self.socks_host)
+            self._controller = Controller.from_port(address=control_address, port=self.control_port)
             self._controller.authenticate(password=self.control_password)
             logger.info("✅ Connected and authenticated to Tor Controller.")
         except (SocketError, AuthenticationFailure) as e:

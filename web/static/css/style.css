@@ -20,6 +20,7 @@
   --accent-green: #10b981;
   --accent-red: #ef4444;
   --accent-amber: #f59e0b;
+  --accent-yellow: #eab308;
   --accent-gray: #3f3f46;
 
   --color-scheme: dark;
@@ -378,7 +379,7 @@ p {
   display: grid;
   grid-template-columns: 420px 1fr;
   gap: 1rem;
-  height: calc(100vh - 110px);
+  height: 100%;
   overflow: hidden;
 }
 
@@ -408,6 +409,11 @@ p {
 .split-list-body {
   flex-grow: 1;
   overflow-y: auto;
+  /* overflow-x defaults to "visible", which the spec computes as "auto" the
+     moment overflow-y isn't also "visible" — that produced a silent inner
+     horizontal scrollbar (and left-clipped row text) whenever the table's
+     content was a hair wider than the 420px panel. Pin it shut instead. */
+  overflow-x: hidden;
 }
 
 /* High-Density Tables */
@@ -425,6 +431,10 @@ p {
   color: var(--text-muted);
   border-bottom: 1px solid var(--border-color);
   font-weight: 600;
+  position: sticky;
+  top: 0;
+  background-color: #0c0c0e;
+  z-index: 1;
 }
 
 .console-table td {
@@ -494,8 +504,8 @@ p {
 
 .badge.medium {
   background-color: rgba(234, 179, 8, 0.08);
-  border: 1px solid var(--accent-amber);
-  color: var(--accent-amber);
+  border: 1px solid var(--accent-yellow);
+  color: var(--accent-yellow);
 }
 
 .badge.low {
@@ -562,19 +572,32 @@ p {
 }
 
 /* Progress indicator inside list */
+.row-indicator-line {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.truncate-cell {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
 .threat-row-indicator {
+  flex-shrink: 0;
   display: inline-block;
   width: 4px;
   height: 16px;
   background-color: var(--accent-green);
-  margin-right: 0.5rem;
   border-radius: 2px;
-  vertical-align: middle;
 }
 
 .threat-row-indicator.critical { background-color: var(--accent-red); }
 .threat-row-indicator.high { background-color: var(--accent-amber); }
-.threat-row-indicator.medium { background-color: var(--accent-amber); }
+.threat-row-indicator.medium { background-color: var(--accent-yellow); }
 .threat-row-indicator.low { background-color: var(--accent-green); }
 
 /* --- PREMIUM LANDING PAGE STYLES --- */
@@ -945,3 +968,192 @@ p {
 .json-val-num { color: var(--accent-amber); }
 .json-val-bool { color: #f43f5e; }
 
+
+/* ============================================
+   API Status Strip (header)
+   ============================================ */
+.api-status-strip {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.api-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+}
+
+.api-pill-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-gray);
+}
+
+.api-pill.on {
+  color: var(--accent-green);
+  border-color: rgba(16, 185, 129, 0.3);
+  background: rgba(16, 185, 129, 0.06);
+}
+.api-pill.on .api-pill-dot { background: var(--accent-green); }
+
+.api-pill.off {
+  color: var(--accent-red);
+  border-color: rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.05);
+}
+.api-pill.off .api-pill-dot { background: var(--accent-red); }
+
+/* ============================================
+   Meter bars (Threat Index / Confidence)
+   ============================================ */
+.meter-track {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--accent-gray);
+  overflow: hidden;
+}
+
+.meter-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.4s ease;
+  background: var(--accent-amber);
+}
+
+.meter-fill.critical { background: var(--accent-red); }
+.meter-fill.high { background: var(--accent-amber); }
+.meter-fill.medium { background: var(--accent-yellow); }
+.meter-fill.low { background: var(--accent-green); }
+
+/* ============================================
+   Overview / Summary Landing View
+   ============================================ */
+.overview-wrap {
+  width: 100%;
+}
+
+.stat-cards-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.85rem;
+}
+
+/* Scoped to the dashboard overview row so these don't clobber the
+   landing page's .stats-strip .stat-card (bare `.stat-card` collided
+   with it here before — same class name, two unrelated contexts). */
+.stat-cards-row .stat-card {
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 1rem 0.85rem;
+  background: #111113;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.stat-cards-row .stat-value {
+  font-family: var(--font-display);
+  font-size: 1.9rem;
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1.1;
+}
+
+.stat-cards-row .stat-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.stat-cards-row .stat-card.critical .stat-value { color: var(--accent-red); }
+.stat-cards-row .stat-card.high .stat-value { color: var(--accent-amber); }
+.stat-cards-row .stat-card.medium .stat-value { color: var(--accent-yellow); }
+.stat-cards-row .stat-card.low .stat-value { color: var(--accent-green); }
+
+.severity-bar-track {
+  display: flex;
+  width: 100%;
+  height: 10px;
+  border-radius: 5px;
+  overflow: hidden;
+  background: var(--accent-gray);
+  margin-top: 0.5rem;
+}
+
+.severity-bar-segment { height: 100%; }
+.severity-bar-segment.critical { background: var(--accent-red); }
+.severity-bar-segment.high { background: var(--accent-amber); }
+.severity-bar-segment.medium { background: var(--accent-yellow); }
+.severity-bar-segment.low { background: var(--accent-green); }
+
+/* ============================================
+   Overview — small single-hue magnitude charts
+   (evidence category breakdown, MITRE frequency)
+   ============================================ */
+.overview-charts-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-top: 1.75rem;
+}
+
+@media (max-width: 900px) {
+  .overview-charts-row { grid-template-columns: 1fr; }
+}
+
+.chart-bar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-top: 0.9rem;
+}
+
+.chart-bar-row {
+  display: grid;
+  grid-template-columns: 130px 1fr 28px;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.chart-bar-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chart-bar-track {
+  height: 16px;
+  background: var(--bg-panel-solid);
+  border-radius: 3px;
+}
+
+.chart-bar-fill {
+  height: 100%;
+  background: var(--accent-green);
+  border-radius: 0 3px 3px 0;
+  min-width: 4px;
+  transition: width 0.4s ease;
+}
+
+.chart-bar-value {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-main);
+  text-align: right;
+}

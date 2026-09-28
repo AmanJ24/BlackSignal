@@ -17,6 +17,9 @@
         </div>
 
         <nav class="sidebar-menu">
+            <button @click="setView('overview')" :class="view === 'overview' ? 'active' : ''" class="sidebar-item">
+                <span>📊</span> Overview
+            </button>
             <button @click="setView('logs')" :class="view === 'logs' ? 'active' : ''" class="sidebar-item">
                 <span>🖥️</span> Live Logs
             </button>
@@ -36,32 +39,6 @@
 
         <div style="flex-grow: 1;"></div>
 
-        <!-- System Configuration Widget -->
-        <div class="sidebar-config-card" style="background: #111113; border: 1px solid var(--border-color); padding: 0.75rem; border-radius: 6px; margin-bottom: 1rem; font-size: 0.75rem;">
-            <div style="font-family: var(--font-display); font-weight: 600; color: var(--text-main); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; justify-content: space-between;">
-                <span>System Config</span>
-                <span class="status-dot" :class="status.running ? 'running' : ''" style="width: 6px; height: 6px;"></span>
-            </div>
-            <div style="display: flex; flex-direction: column; gap: 0.35rem; font-family: var(--font-sans); color: var(--text-muted);">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span>Tor SOCKS Svc</span>
-                    <span style="font-weight: 500; font-family: var(--font-mono); color: var(--accent-green);">ONLINE</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span>VirusTotal API</span>
-                    <span :style="apiKeys.virustotal ? 'color: var(--accent-green)' : 'color: var(--accent-red)'" style="font-weight: 500; font-family: var(--font-mono);" x-text="apiKeys.virustotal ? 'ACTIVE' : 'OFFLINE'"></span>
-                </div>
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span>AbuseIPDB API</span>
-                    <span :style="apiKeys.abuseipdb ? 'color: var(--accent-green)' : 'color: var(--accent-red)'" style="font-weight: 500; font-family: var(--font-mono);" x-text="apiKeys.abuseipdb ? 'ACTIVE' : 'OFFLINE'"></span>
-                </div>
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span>Shodan API</span>
-                    <span :style="apiKeys.shodan ? 'color: var(--accent-green)' : 'color: var(--accent-red)'" style="font-weight: 500; font-family: var(--font-mono);" x-text="apiKeys.shodan ? 'ACTIVE' : 'OFFLINE'"></span>
-                </div>
-            </div>
-        </div>
-
         <button @click="runPipeline" :disabled="status.running" class="btn btn-primary" style="width: 100%;">
             <span x-show="!status.running">Start Pipeline</span>
             <span x-show="status.running" style="display: inline-flex; align-items: center; gap: 0.5rem;">
@@ -74,11 +51,19 @@
     <main class="panel-main">
         <!-- Header -->
         <header class="panel-header">
-            <div class="status-tag">
-                <span class="status-dot" :class="status.running ? 'running' : ''"></span>
-                <span x-text="status.running ? 'PIPELINE RUNNING: ' + status.stage.toUpperCase() : 'PIPELINE STANDBY'"></span>
+            <div style="display: flex; align-items: center; gap: 1.25rem;">
+                <div class="status-tag">
+                    <span class="status-dot" :class="status.running ? 'running' : ''"></span>
+                    <span x-text="status.running ? 'PIPELINE RUNNING: ' + status.stage.toUpperCase() : 'PIPELINE STANDBY'"></span>
+                </div>
+                <div class="api-status-strip">
+                    <span class="api-pill on"><span class="api-pill-dot"></span>TOR</span>
+                    <span class="api-pill" :class="apiKeys.virustotal ? 'on' : 'off'"><span class="api-pill-dot"></span>VIRUSTOTAL</span>
+                    <span class="api-pill" :class="apiKeys.abuseipdb ? 'on' : 'off'"><span class="api-pill-dot"></span>ABUSEIPDB</span>
+                    <span class="api-pill" :class="apiKeys.shodan ? 'on' : 'off'"><span class="api-pill-dot"></span>SHODAN</span>
+                </div>
             </div>
-            
+
             <div style="display: flex; gap: 1rem; align-items: center;">
                 <label style="font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.4rem; cursor: pointer; user-select: none;">
                     <input type="checkbox" x-model="showRawJson" style="accent-color: var(--accent-green);"> Raw JSON
@@ -89,7 +74,105 @@
 
         <!-- Body -->
         <section class="panel-body">
-            
+
+            <!-- 0. OVERVIEW / SUMMARY LANDING VIEW -->
+            <div x-show="view === 'overview'" class="overview-wrap">
+                <h3 style="font-size: 1.15rem; margin-bottom: 1.25rem;">Threat Landscape Overview</h3>
+
+                <div class="stat-cards-row">
+                    <div class="stat-card">
+                        <div class="stat-value" x-text="overviewStats().total"></div>
+                        <div class="stat-label">Entities Scored</div>
+                    </div>
+                    <div class="stat-card critical">
+                        <div class="stat-value" x-text="overviewStats().critical"></div>
+                        <div class="stat-label">Critical</div>
+                    </div>
+                    <div class="stat-card high">
+                        <div class="stat-value" x-text="overviewStats().high"></div>
+                        <div class="stat-label">High</div>
+                    </div>
+                    <div class="stat-card medium">
+                        <div class="stat-value" x-text="overviewStats().medium"></div>
+                        <div class="stat-label">Medium</div>
+                    </div>
+                    <div class="stat-card low">
+                        <div class="stat-value" x-text="overviewStats().low"></div>
+                        <div class="stat-label">Low</div>
+                    </div>
+                </div>
+
+                <div class="detail-section-title" style="margin-top: 1.75rem;">Severity Distribution</div>
+                <div class="severity-bar-track" x-show="overviewStats().total > 0">
+                    <div class="severity-bar-segment critical" :style="'width:' + (overviewStats().critical / overviewStats().total * 100) + '%'"></div>
+                    <div class="severity-bar-segment high" :style="'width:' + (overviewStats().high / overviewStats().total * 100) + '%'"></div>
+                    <div class="severity-bar-segment medium" :style="'width:' + (overviewStats().medium / overviewStats().total * 100) + '%'"></div>
+                    <div class="severity-bar-segment low" :style="'width:' + (overviewStats().low / overviewStats().total * 100) + '%'"></div>
+                </div>
+                <div x-show="overviewStats().total === 0" style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">
+                    No scored intelligence compiled yet. Run the pipeline to populate this view.
+                </div>
+
+                <div class="overview-charts-row" x-show="overviewData.length > 0">
+                    <div>
+                        <div class="detail-section-title">Evidence Signal Breakdown</div>
+                        <div class="chart-bar-list">
+                            <template x-for="row in evidenceCategoryBreakdown()">
+                                <div class="chart-bar-row">
+                                    <span class="chart-bar-label" x-text="row.label"></span>
+                                    <div class="chart-bar-track">
+                                        <div class="chart-bar-fill" :style="'width:' + row.pct + '%'" :title="row.count + ' signals in ' + row.label"></div>
+                                    </div>
+                                    <span class="chart-bar-value" x-text="row.count"></span>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="detail-section-title">MITRE ATT&amp;CK Technique Frequency</div>
+                        <div class="chart-bar-list">
+                            <template x-for="row in mitreTechniqueBreakdown()">
+                                <div class="chart-bar-row">
+                                    <span class="chart-bar-label" x-text="row.label"></span>
+                                    <div class="chart-bar-track">
+                                        <div class="chart-bar-fill" :style="'width:' + row.pct + '%'" :title="row.label + ': matched ' + row.count + ' time(s)'"></div>
+                                    </div>
+                                    <span class="chart-bar-value" x-text="row.count"></span>
+                                </div>
+                            </template>
+                            <div x-show="mitreTechniqueBreakdown().length === 0" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem;">No MITRE technique matches yet.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detail-section-title" style="margin-top: 1.75rem;">Top Threats</div>
+                <table class="console-table" style="table-layout: fixed;" x-show="overviewData.length > 0">
+                    <thead>
+                        <tr>
+                            <th>Target ID</th>
+                            <th style="width: 100px;">Type</th>
+                            <th style="width: 110px;">Severity</th>
+                            <th style="width: 80px;">Score</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="threat in [...overviewData].sort((a,b) => b.threat_score - a.threat_score).slice(0, 5)">
+                            <tr @click="jumpToThreat(threat)" style="cursor: pointer;">
+                                <td style="overflow: hidden;">
+                                    <div class="row-indicator-line">
+                                        <span class="threat-row-indicator" :class="threat.severity.toLowerCase()"></span>
+                                        <span class="truncate-cell" x-text="threat.entity_id.length > 24 ? threat.entity_id.substring(0, 24) + '...' : threat.entity_id"></span>
+                                    </div>
+                                </td>
+                                <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" x-text="threat.entity_type"></td>
+                                <td><span class="badge" :class="threat.severity.toLowerCase()" x-text="threat.severity"></span></td>
+                                <td style="font-family: var(--font-mono); font-weight: 700; color: white;" x-text="threat.threat_score"></td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+
             <!-- 1. LIVE EVENT TERMINAL -->
             <div x-show="view === 'logs'" class="terminal-wrap">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem; align-items: center;">
@@ -110,7 +193,7 @@
             </div>
 
             <!-- 2. HIGH DENSITY SPLIT PANEL VIEWS (JSON TOGGLE ACTIVE) -->
-            <div x-show="view !== 'logs' && showRawJson" class="terminal-wrap">
+            <div x-show="view !== 'logs' && view !== 'overview' && showRawJson" class="terminal-wrap">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem; align-items: center;">
                     <h3 style="font-size: 1.15rem; text-transform: capitalize;" x-text="view + ' Data Schema'"></h3>
                     <button @click="loadData(view)" class="btn btn-secondary" style="padding: 0.4rem 0.85rem; font-size: 0.8rem;">Refresh</button>
@@ -127,7 +210,7 @@
             </div>
 
             <!-- 3. SPLIT PANEL DYNAMIC CARD EXPLORER (DEFAULT VIEW) -->
-            <div x-show="view !== 'logs' && !showRawJson" class="split-pane">
+            <div x-show="view !== 'logs' && view !== 'overview' && !showRawJson" class="split-pane">
                 
                 <!-- Left Pane: High-Density Table List -->
                 <div class="split-list-view">
@@ -137,23 +220,25 @@
                     </div>
                     <div class="split-list-body">
                         <!-- Table for Scored Intelligence -->
-                        <table class="console-table" x-show="view === 'intelligence'">
+                        <table class="console-table" style="table-layout: fixed;" x-show="view === 'intelligence'">
                             <thead>
                                 <tr>
                                     <th>Target ID</th>
-                                    <th>Type</th>
-                                    <th>Severity</th>
-                                    <th>Score</th>
+                                    <th style="width: 70px;">Type</th>
+                                    <th style="width: 90px;">Severity</th>
+                                    <th style="width: 60px;">Score</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <template x-for="threat in flatData">
                                     <tr @click="selectedThreat = threat" :class="selectedThreat?.entity_id === threat.entity_id ? 'selected' : ''">
-                                        <td>
-                                            <span class="threat-row-indicator" :class="threat.severity.toLowerCase()"></span>
-                                            <span x-text="threat.entity_id.length > 20 ? threat.entity_id.substring(0, 20) + '...' : threat.entity_id"></span>
+                                        <td style="overflow: hidden;">
+                                            <div class="row-indicator-line">
+                                                <span class="threat-row-indicator" :class="threat.severity.toLowerCase()"></span>
+                                                <span class="truncate-cell" x-text="threat.entity_id.length > 20 ? threat.entity_id.substring(0, 20) + '...' : threat.entity_id"></span>
+                                            </div>
                                         </td>
-                                        <td x-text="threat.entity_type"></td>
+                                        <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" x-text="threat.entity_type"></td>
                                         <td>
                                             <span class="badge" :class="threat.severity.toLowerCase()" x-text="threat.severity"></span>
                                         </td>
@@ -167,27 +252,35 @@
                         </table>
 
                         <!-- Table for Raw Scrapes / Normalized / Enriched IOCs -->
-                        <table class="console-table" x-show="view !== 'intelligence'">
+                        <table class="console-table" style="table-layout: fixed;" x-show="view !== 'intelligence'">
                             <thead>
                                 <tr>
                                     <th>Indicator</th>
-                                    <th>Type</th>
-                                    <th>Source File</th>
+                                    <th style="width: 110px;">Type</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <template x-for="ioc in flatData">
-                                    <tr @click="selectedIOC = ioc" :class="selectedIOC?.id === ioc.id ? 'selected' : ''">
-                                        <td style="font-family: var(--font-mono);">
-                                            <span class="threat-row-indicator low"></span>
-                                            <span x-text="ioc.id.length > 22 ? ioc.id.substring(0, 22) + '...' : ioc.id"></span>
+                                    <tr @click="selectedIOC = ioc" :class="selectedIOC === ioc ? 'selected' : ''">
+                                        <td style="font-family: var(--font-mono); overflow: hidden;">
+                                            <div class="row-indicator-line">
+                                                <span class="threat-row-indicator low"></span>
+                                                <template x-if="ioc.id">
+                                                    <span class="truncate-cell" x-text="ioc.id.length > 26 ? ioc.id.substring(0, 26) + '...' : ioc.id"></span>
+                                                </template>
+                                                <template x-if="!ioc.id && ioc.raw_text">
+                                                    <span class="truncate-cell" style="color: var(--text-muted); font-style: italic;" x-text="ioc.raw_text.substring(0, 32) + '...'"></span>
+                                                </template>
+                                                <template x-if="!ioc.id && !ioc.raw_text">
+                                                    <span style="color: var(--text-muted); font-style: italic;">N/A</span>
+                                                </template>
+                                            </div>
                                         </td>
-                                        <td x-text="ioc.type || ioc.subtype"></td>
-                                        <td style="font-size: 0.8rem; color: var(--text-muted);" x-text="ioc.source_file"></td>
+                                        <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" x-text="ioc.type || ioc.subtype || (ioc.raw_text ? 'unstructured' : '')"></td>
                                     </tr>
                                 </template>
                                 <tr x-show="getListCount() === 0">
-                                    <td colspan="3" style="text-align: center; color: var(--text-muted); padding: 3rem 0;">No intelligence indicators loaded.</td>
+                                    <td colspan="2" style="text-align: center; color: var(--text-muted); padding: 3rem 0;">No intelligence indicators loaded.</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -225,6 +318,25 @@
                                         <span class="metadata-value" x-text="(selectedThreat.overall_confidence * 100) + '%'"></span>
                                     </div>
 
+                                    <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                                        <div>
+                                            <div style="display:flex; justify-content:space-between; font-size:0.7rem; color:var(--text-muted); margin-bottom:0.3rem; text-transform:uppercase; letter-spacing:0.05em;">
+                                                <span>Threat Index</span><span x-text="selectedThreat.threat_score + ' / 100'"></span>
+                                            </div>
+                                            <div class="meter-track">
+                                                <div class="meter-fill" :class="selectedThreat.severity.toLowerCase()" :style="'width:' + selectedThreat.threat_score + '%'"></div>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div style="display:flex; justify-content:space-between; font-size:0.7rem; color:var(--text-muted); margin-bottom:0.3rem; text-transform:uppercase; letter-spacing:0.05em;">
+                                                <span>Confidence</span><span x-text="Math.round(selectedThreat.overall_confidence * 100) + '%'"></span>
+                                            </div>
+                                            <div class="meter-track">
+                                                <div class="meter-fill" style="background: var(--accent-green);" :style="'width:' + (selectedThreat.overall_confidence * 100) + '%'"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <div class="detail-section-title">Correlated Evidence</div>
 
                                     <div class="detail-evidence-list">
@@ -258,9 +370,17 @@
                             <template x-if="selectedIOC">
                                 <div style="display: flex; flex-direction: column; gap: 1.5rem;">
                                     <div>
-                                        <div style="font-size: 0.8rem; color: var(--text-muted); font-family: var(--font-mono); margin-bottom: 0.25rem;">INDICATOR VALUE</div>
-                                        <h3 style="font-size: 1.25rem; color: white; word-break: break-all; font-family: var(--font-mono);" x-text="selectedIOC.id"></h3>
-                                        <button @click="copyToClipboard(selectedIOC.id)" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem; margin-top: 0.5rem;">Copy to Clipboard</button>
+                                        <div style="font-size: 0.8rem; color: var(--text-muted); font-family: var(--font-mono); margin-bottom: 0.25rem;" x-text="selectedIOC.id ? 'INDICATOR VALUE' : 'UNSTRUCTURED SOURCE TEXT'"></div>
+                                        <h3 x-show="selectedIOC.id" style="font-size: 1.25rem; color: white; word-break: break-all; font-family: var(--font-mono);" x-text="selectedIOC.id"></h3>
+                                        <p x-show="!selectedIOC.id" style="font-size: 0.9rem; color: var(--text-main); line-height: 1.5;" x-text="selectedIOC.raw_text || 'N/A'"></p>
+                                        <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap;">
+                                            <button @click="copyToClipboard(selectedIOC.id || selectedIOC.raw_text)" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;">Copy to Clipboard</button>
+                                            <template x-if="getMatchingThreat(selectedIOC.id)">
+                                                <button @click="jumpToThreat(getMatchingThreat(selectedIOC.id))" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem; color: var(--accent-amber); border-color: var(--accent-amber);">
+                                                    View Threat Assessment (<span x-text="getMatchingThreat(selectedIOC.id).severity"></span>) →
+                                                </button>
+                                            </template>
+                                        </div>
                                     </div>
 
                                     <div class="detail-section-title">Indicator Metadata</div>
@@ -343,13 +463,14 @@
     <script>
         function appData() {
             return {
-                view: 'logs',
+                view: 'overview',
                 showRawJson: false,
                 status: { running: false, stage: 'Idle' },
                 apiKeys: { virustotal: false, abuseipdb: false, shodan: false },
                 logs: [],
                 currentData: [],
                 flatData: [],
+                overviewData: [],
                 selectedThreat: null,
                 selectedIOC: null,
                 socket: null,
@@ -364,17 +485,75 @@
                         if(msg.status === 'completed') {
                             this.status.running = false;
                             this.status.stage = 'Completed';
+                            this.loadOverview();
                             this.setView('intelligence'); // Jump to Intelligence view on completion
                         }
                     });
                     this.updateStatus();
+                    this.loadOverview();
                 },
 
                 setView(viewName) {
                     this.view = viewName;
                     this.selectedThreat = null;
                     this.selectedIOC = null;
-                    this.loadData(viewName);
+                    if (viewName !== 'overview') this.loadData(viewName);
+                },
+
+                jumpToThreat(threat) {
+                    this.setView('intelligence');
+                    this.selectedThreat = threat;
+                },
+
+                getMatchingThreat(id) {
+                    return this.overviewData.find(t => t.entity_id === id) || null;
+                },
+
+                async loadOverview() {
+                    const res = await fetch('/api/data/intelligence');
+                    const json = await res.json();
+                    this.overviewData = (json.flat_data || []).filter(t => t.threat_score !== undefined);
+                },
+
+                overviewStats() {
+                    const stats = { total: this.overviewData.length, critical: 0, high: 0, medium: 0, low: 0 };
+                    for (const t of this.overviewData) {
+                        const sev = (t.severity || '').toLowerCase();
+                        if (stats[sev] !== undefined) stats[sev]++;
+                    }
+                    return stats;
+                },
+
+                evidenceCategoryBreakdown() {
+                    const labels = {
+                        mitre: 'MITRE ATT&CK', affiliate: 'Affiliate / RaaS', behavioral: 'Behavioral',
+                        infrastructure: 'Infrastructure', ioc: 'IOC Lookup'
+                    };
+                    const counts = {};
+                    for (const t of this.overviewData) {
+                        for (const r of (t.reasons || [])) {
+                            counts[r.category] = (counts[r.category] || 0) + 1;
+                        }
+                    }
+                    const rows = Object.entries(counts).map(([cat, count]) => ({ label: labels[cat] || cat, count }));
+                    rows.sort((a, b) => b.count - a.count);
+                    const max = Math.max(1, ...rows.map(r => r.count));
+                    return rows.map(r => ({ ...r, pct: Math.max(4, Math.round(r.count / max * 100)) }));
+                },
+
+                mitreTechniqueBreakdown() {
+                    const counts = {};
+                    for (const t of this.overviewData) {
+                        for (const r of (t.reasons || [])) {
+                            if (r.category !== 'mitre' || !r.description) continue;
+                            const matches = r.description.match(/T\d{4}/g) || [];
+                            for (const ttp of matches) counts[ttp] = (counts[ttp] || 0) + 1;
+                        }
+                    }
+                    const rows = Object.entries(counts).map(([ttp, count]) => ({ label: ttp, count }));
+                    rows.sort((a, b) => b.count - a.count);
+                    const max = Math.max(1, ...rows.map(r => r.count));
+                    return rows.map(r => ({ ...r, pct: Math.max(4, Math.round(r.count / max * 100)) }));
                 },
 
                 async updateStatus() {

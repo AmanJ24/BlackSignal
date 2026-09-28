@@ -55,6 +55,7 @@ class ScoringEngine:
                 reasons.append({
                     "category": category,
                     "signal": signal_type,
+                    "description": signal.get("description"),
                     "confidence": confidence,
                     "points_contributed": round(points, 2)
                 })
