@@ -50,11 +50,32 @@ class TestIOCPatterns:
 
     def test_btc_legacy_address(self):
         matches = re.findall(self.patterns["btc_wallet"], "Pay to 1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa")
-        assert len(matches) == 1
+        assert matches == ["1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa"]
 
     def test_btc_bech32_address(self):
         matches = re.findall(self.patterns["btc_wallet"], "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4")
-        assert len(matches) == 1
+        assert matches == ["bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4"]
+
+    def test_btc_returns_full_address_not_prefix(self):
+        text = "send 3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy or bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq"
+        matches = re.findall(self.patterns["btc_wallet"], text)
+        assert matches == [
+            "3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy",
+            "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq",
+        ]
+
+    def test_btc_does_not_match_sha1_or_sha256(self):
+        sha1 = "1e4e888ac66f8dd41e00c5a7ac36a32a9950d271"
+        sha256 = "3b4c8f2a9d1e7f6a5b0c3d2e1f9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a"
+        assert re.findall(self.patterns["btc_wallet"], sha1) == []
+        assert re.findall(self.patterns["btc_wallet"], sha256) == []
+
+    def test_md5_lookalike_is_filtered(self):
+        # No '0' in the hash, so it fits the legacy BTC shape; the guard must reject it.
+        md5 = "3a7bd3e2362a3d29eea436fcfb7e44c7"
+        assert re.findall(self.patterns["btc_wallet"], md5) == [md5]
+        assert IOCExtractor._is_md5_lookalike(md5)
+        assert not IOCExtractor._is_md5_lookalike("1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa")
 
     # --- Onion domains ---
 

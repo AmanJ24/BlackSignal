@@ -27,8 +27,9 @@ class IOCExtractor:
         # Email Addresses
         "email": r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b',
         
-        # Bitcoin Addresses (Legacy & Bech32)
-        "btc_wallet": r'\b(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,39}\b',
+        # Bitcoin Addresses: legacy/P2SH (Base58, 26-34 chars) and Bech32 (bc1...).
+        # Non-capturing groups only: findall() must return the full address, not a group.
+        "btc_wallet": r'\b(?:[13][a-km-zA-HJ-NP-Z1-9]{25,33}|bc1[ac-hj-np-z02-9]{11,71})\b',
         
         # Onion V3 Domains
         "onion_domain": r'\b[a-z2-7]{56}\.onion\b',
@@ -59,6 +60,11 @@ class IOCExtractor:
             logger.info(f"🔍 Processing: {os.path.basename(file_path)}")
             self._process_file(file_path)
 
+    @staticmethod
+    def _is_md5_lookalike(candidate):
+        """A 32-char hex string that happens to fit the legacy BTC shape is an MD5, not a wallet."""
+        return re.fullmatch(r'[a-fA-F0-9]{32}', candidate) is not None
+
     def _process_file(self, file_path):
         try:
             with open(file_path, 'r') as f:
@@ -78,6 +84,8 @@ class IOCExtractor:
                 for match in matches:
                     # BASIC FILTERING (Remove Local IPs)
                     if ioc_type == "ipv4" and (match.startswith("127.") or match.startswith("192.168.")):
+                        continue
+                    if ioc_type == "btc_wallet" and self._is_md5_lookalike(match):
                         continue
                     
                     extracted_iocs.append({
